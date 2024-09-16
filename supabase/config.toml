@@ -1,6 +1,6 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "lc-simple-app-template"
+project_id = "discordinate"
 
 [api]
 enabled = true

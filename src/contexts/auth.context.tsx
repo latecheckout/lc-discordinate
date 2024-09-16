@@ -18,6 +18,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
 
   useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession()
+      // this is when the user is logged in but not authorized on discord side
+      if (!data.session?.provider_token) {
+        setSession(null)
+        const { error } = await supabase.auth.signOut()
+      }
+    }
+    checkSession()
+  }, [])
+
+  useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session)
       setUser(session?.user ?? null)

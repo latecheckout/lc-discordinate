@@ -37,7 +37,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (error) throw error
         setCommunities(data)
         // Use the data here or return it
-        // upsert communities to dataabase here
+        // TODO: upsert communities to dataabase here
       } catch (error) {
         console.error('Failed to fetch guilds:', error)
         // Handle the error appropriately

@@ -10,7 +10,8 @@ export default function SignIn() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
         options: {
-          redirectTo: `${getURL()}/dashboard`, // Redirect to dashboard after successful sign-in
+          scopes: 'guilds',
+          redirectTo: `${getURL()}/`, // Redirect to dashboard after successful sign-in
         },
       })
       if (error) throw error

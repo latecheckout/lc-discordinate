@@ -1,5 +1,5 @@
 {
-  "name": "lc-simple-app-template",
+  "name": "lc-discordinate",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "db:gen-types": "supabase gen types typescript --local | tee ./supabase/functions/_shared/database.types.ts ./src/lib/database.types.ts",
+    "db:migration": "supabase db diff --local --schema=auth,public,storage -f",
     "prepare": "husky"
   },
   "dependencies": {

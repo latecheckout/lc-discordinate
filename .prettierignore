@@ -1,0 +1,16 @@
+# Ignore artifacts:
+build
+coverage
+
+# Ignore hidden files
+.*
+
+# Ignore node_modules
+node_modules
+
+# Ignore build output
+.next
+out
+
+# Ignore logs
+*.log

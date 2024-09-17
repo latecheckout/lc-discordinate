@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,11 +15,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Label } from '@/components/ui/label'
-import DateTimePicker from '@/components/DateTimePicker'
+import DatePicker from '@/components/DatePicker'
+import TimeSlotPicker from '@/components/TimeSlotPicker'
 import { toast } from 'sonner'
 
 const sessionSchema = z.object({
-  scheduledAt: z.date().min(new Date(), { message: 'Session date must be in the future' }),
+  scheduledDate: z.date(),
+  scheduledTime: z.string().min(1, { message: 'Please select a time slot' }),
 })
 
 type SessionFormValues = z.infer<typeof sessionSchema>
@@ -36,20 +38,25 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
-      scheduledAt: undefined,
+      scheduledDate: undefined,
+      scheduledTime: undefined,
     },
   })
 
   const handleCreateSession = async (values: SessionFormValues) => {
     setIsLoading(true)
     try {
-      if (!values.scheduledAt) {
+      if (!values.scheduledDate || !values.scheduledTime) {
         throw new Error('Please select both a date and time')
       }
+      const [hours, minutes] = values.scheduledTime.split(':').map(Number)
+      const scheduledDate = new Date(values.scheduledDate)
+      scheduledDate.setHours(hours, minutes, 0, 0)
+
       const { error } = await supabase.from('session').insert([
         {
           community_id: communityId,
-          scheduled_at: values.scheduledAt.toISOString(),
+          scheduled_at: scheduledDate.toISOString(),
           created_by: user?.id ?? '',
         },
       ])
@@ -61,11 +68,21 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
       toast.success('Session created successfully!')
     } catch (error) {
       console.error('Error creating session:', error)
-      // Handle error (e.g., show error message to user)
+      toast.error('Failed to create session. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
+
+  // Reset form when dialog is closed
+  useEffect(() => {
+    if (!isOpen) {
+      form.reset({
+        scheduledDate: undefined,
+        scheduledTime: undefined,
+      })
+    }
+  }, [isOpen, form])
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -82,12 +99,28 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
           <form onSubmit={form.handleSubmit(handleCreateSession)} className="space-y-4">
             <FormField
               control={form.control}
-              name="scheduledAt"
+              name="scheduledDate"
               render={({ field }) => (
                 <FormItem>
-                  <Label>Date and Time</Label>
+                  <Label className="pr-4">Date</Label>
                   <FormControl>
-                    <DateTimePicker date={field.value} setDate={field.onChange} />
+                    <DatePicker date={field.value} setDate={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="scheduledTime"
+              render={({ field }) => (
+                <FormItem>
+                  <Label>Time Slot</Label>
+                  <FormControl>
+                    <TimeSlotPicker
+                      onTimeSelect={field.onChange}
+                      selectedDate={form.watch('scheduledDate')}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

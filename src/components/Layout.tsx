@@ -2,7 +2,7 @@ import Header from '@/components/Header'
 import { useAuth } from '@/contexts/auth.context'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
-
+import { Toaster } from 'sonner'
 interface LayoutProps {
   children: React.ReactNode
 }
@@ -28,6 +28,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <Toaster />
       <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">{children}</main>
     </div>
   )

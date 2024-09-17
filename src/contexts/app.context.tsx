@@ -26,7 +26,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     const getCommunities = async (dToken: string) => {
       try {
-        const { data, error } = await supabase.functions.invoke('discord', {
+        const { data, error } = await supabase.functions.invoke<Tables<'community'>[]>('discord', {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
           },
@@ -36,8 +36,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         })
         if (error) throw error
         setCommunities(data)
+        if (!data) return
         // Use the data here or return it
-        // TODO: upsert communities to dataabase here
+        // Upsert communities to database
+        const { error: upsertError } = await supabase.from('community').upsert(
+          data.map((guild) => ({
+            ...guild,
+            created_by: user?.id ?? '',
+          })) ?? [],
+          { onConflict: 'guild_id' },
+        )
+        if (upsertError) {
+          throw new Error(`Failed to upsert communities: ${upsertError.message}`)
+        }
       } catch (error) {
         console.error('Failed to fetch guilds:', error)
         // Handle the error appropriately

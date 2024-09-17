@@ -1,7 +1,10 @@
 import { Tables } from '@/lib/database.types'
 import { supabase } from './client'
 
-export async function fetchCommunities(dToken: string, accessToken: string) {
+export async function fetchCommunities(
+  dToken: string,
+  accessToken: string,
+): Promise<Tables<'community'>[]> {
   const { data, error } = await supabase.functions.invoke<Tables<'community'>[]>('discord', {
     headers: { Authorization: `Bearer ${accessToken}` },
     body: { discordProviderToken: dToken },
@@ -10,7 +13,10 @@ export async function fetchCommunities(dToken: string, accessToken: string) {
   return data ?? []
 }
 
-export async function upsertCommunities(communities: Tables<'community'>[], userId: string) {
+export async function upsertCommunities(
+  communities: Tables<'community'>[],
+  userId: string,
+): Promise<Map<string, string>> {
   const { data: communityData, error: upsertError } = await supabase
     .from('community')
     .upsert(
@@ -41,5 +47,28 @@ export async function upsertUserCommunityRelationships(
 
   if (userCommunityError) {
     throw new Error(`Failed to upsert user_to_community: ${userCommunityError.message}`)
+  }
+}
+
+export async function getCommunityWithUserCount(
+  guildId: string,
+): Promise<{ community: Tables<'community'> | null; userCount: number }> {
+  const {
+    data,
+    error: communityError,
+    count,
+  } = await supabase
+    .from('community')
+    .select('*, user_to_community!inner(*)', { count: 'exact' })
+    .eq('guild_id', guildId)
+    .single()
+
+  if (communityError) {
+    throw new Error(`Failed to get community with user count: ${communityError.message}`)
+  }
+
+  return {
+    community: data,
+    userCount: count ?? 0,
   }
 }

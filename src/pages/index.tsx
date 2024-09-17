@@ -1,3 +1,4 @@
+import Header from '@/components/Header'
 import { useApp } from '@/contexts/app.context'
 import { useAuth } from '@/contexts/auth.context'
 import Image from 'next/image'
@@ -25,6 +26,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="bg-card shadow-xl rounded-lg overflow-hidden">
           <div className="bg-primary px-4 py-5 sm:px-6">

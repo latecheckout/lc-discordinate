@@ -4,6 +4,7 @@ import Layout from '@/components/Layout'
 import Image from 'next/image'
 import { getCommunityWithUserCount } from '@/lib/supabase/communityOperations'
 import { Tables } from '@/lib/database.types'
+import { CreateSessionDialog } from '@/components/CreateSessionDialog'
 
 export default function CommunityPage() {
   const router = useRouter()
@@ -66,6 +67,8 @@ export default function CommunityPage() {
           {/* Add more community information here as needed */}
         </div>
       </div>
+
+      <CreateSessionDialog communityId={community.id} />
     </Layout>
   )
 }

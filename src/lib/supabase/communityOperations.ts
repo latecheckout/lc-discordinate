@@ -5,11 +5,12 @@ export async function fetchCommunities(
   dToken: string,
   accessToken: string,
 ): Promise<Tables<'community'>[]> {
-  const { data, error } = await supabase.functions.invoke<Tables<'community'>[]>('discord', {
+  const { error } = await supabase.functions.invoke<Tables<'community'>[]>('discord', {
     headers: { Authorization: `Bearer ${accessToken}` },
     body: { discordProviderToken: dToken },
   })
   if (error) throw error
+  const { data } = await supabase.from('community').select('*')
   return data ?? []
 }
 

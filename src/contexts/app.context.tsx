@@ -1,11 +1,7 @@
 import { Tables } from '@/lib/database.types'
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react'
 import { useAuth } from './auth.context'
-import {
-  fetchCommunities,
-  upsertCommunities,
-  upsertUserCommunityRelationships,
-} from '@/lib/supabase/communityOperations'
+import { fetchCommunities } from '@/lib/supabase/communityOperations'
 
 // Define the shape of your context
 interface AppContextType {
@@ -38,8 +34,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (!user?.id) {
           throw new Error('No user ID available')
         }
-        const communityIdMap = await upsertCommunities(communities, user.id)
-        await upsertUserCommunityRelationships(communities, communityIdMap, user.id)
 
         setCommunities(communities)
       } catch (error) {

@@ -1,5 +1,6 @@
 import { useApp } from '@/contexts/app.context'
 import { useAuth } from '@/contexts/auth.context'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 
@@ -36,10 +37,27 @@ export default function Home() {
                 {communities.map((community, index) => (
                   <li
                     key={index}
-                    className="py-4 flex items-center hover:bg-accent transition duration-150 ease-in-out"
+                    className="py-4 flex items-center hover:bg-accent transition duration-150 ease-in-out cursor-pointer px-4 rounded-lg"
                   >
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-foreground">{community.name}</p>
+                    <div className="flex items-center">
+                      {community.pfp ? (
+                        <Image
+                          src={`https://cdn.discordapp.com/icons/${community.guild_id}/${community.pfp}.png`}
+                          alt={`${community.name} icon`}
+                          width={48}
+                          height={48}
+                          className="w-12 h-12 rounded-full mr-4 border-2 border-primary/20"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full mr-4 bg-primary/10 flex items-center justify-center">
+                          <span className="text-lg font-semibold text-primary">
+                            {community.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-base font-medium text-foreground">{community.name}</p>
+                      </div>
                     </div>
                   </li>
                 ))}

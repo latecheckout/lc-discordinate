@@ -184,6 +184,39 @@ export type Database = {
           },
         ]
       }
+      user_to_session: {
+        Row: {
+          created_at: string | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_to_session_session_id_fkey'
+            columns: ['session_id']
+            isOneToOne: false
+            referencedRelation: 'session'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'user_to_session_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

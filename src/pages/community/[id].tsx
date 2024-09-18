@@ -1,16 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '@/components/Layout'
 import Image from 'next/image'
 import { getCommunityWithUserCount } from '@/lib/supabase/communityOperations'
 import { Tables } from '@/lib/database.types'
 import { CreateSessionDialog } from '@/components/CreateSessionDialog'
+import { supabase } from '@/lib/supabase/client'
 
 export default function CommunityPage() {
   const router = useRouter()
   const { id } = router.query
   const [userCount, setUserCount] = useState<number | null>(null)
   const [community, setCommunity] = useState<Tables<'community'> | null>(null)
+  const [existingSession, setExistingSession] = useState<boolean>(false)
+
+  const checkExistingSession = useCallback(async (communityId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('session')
+        .select('id')
+        .eq('community_id', communityId)
+        .gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: true })
+        .limit(1)
+
+      if (error) throw error
+      setExistingSession(data.length > 0)
+    } catch (error) {
+      console.error('Error checking existing session:', error)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchCommunityDetails = async () => {
@@ -18,6 +37,10 @@ export default function CommunityPage() {
         const { community, userCount } = await getCommunityWithUserCount(id as string)
         setCommunity(community)
         setUserCount(userCount)
+
+        if (community) {
+          await checkExistingSession(community.id)
+        }
       } catch (error) {
         console.error('Failed to get community details', error)
       }
@@ -26,7 +49,13 @@ export default function CommunityPage() {
     if (id) {
       fetchCommunityDetails()
     }
-  }, [id])
+  }, [id, checkExistingSession])
+
+  const handleSessionCreated = useCallback(() => {
+    if (community) {
+      checkExistingSession(community.id)
+    }
+  }, [community, checkExistingSession])
 
   if (!community) {
     return (
@@ -68,7 +97,9 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      <CreateSessionDialog communityId={community.id} />
+      {!existingSession && community && (
+        <CreateSessionDialog communityId={community.id} onSessionCreated={handleSessionCreated} />
+      )}
     </Layout>
   )
 }

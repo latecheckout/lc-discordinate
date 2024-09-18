@@ -30,9 +30,10 @@ type SessionFormValues = z.infer<typeof sessionSchema>
 
 interface CreateSessionDialogProps {
   communityId: string
+  onSessionCreated: () => void
 }
 
-export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
+export function CreateSessionDialog({ communityId, onSessionCreated }: CreateSessionDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { user } = useAuth()
@@ -82,6 +83,7 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
           ? 'Session created successfully!'
           : 'Joined the queue successfully!',
       )
+      onSessionCreated()
     } catch (error) {
       console.error('Error creating session:', error)
       toast.error('Failed to create session. Please try again.')

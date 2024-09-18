@@ -73,3 +73,21 @@ export async function getCommunityWithUserCount(
     userCount: count ?? 0,
   }
 }
+
+export async function fetchSessionAndConfig(
+  sessionId: string,
+): Promise<{ session: Tables<'session'> | null; config: Tables<'session_config'> | null }> {
+  const { data: sessionData, error: sessionError } = await supabase
+    .from('session')
+    .select('*, config:session_config(*)')
+    .eq('id', sessionId)
+    .single()
+
+  if (sessionError) {
+    throw new Error(`Failed to fetch session: ${sessionError.message}`)
+  }
+  return {
+    session: sessionData,
+    config: sessionData?.config ?? null,
+  }
+}

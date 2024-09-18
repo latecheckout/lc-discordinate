@@ -74,16 +74,6 @@ to authenticated
 using ((user_id = auth.uid()));
 
 
-create policy "Community members can insert their user_to_session relationships"
-on "public"."user_to_session"
-as PERMISSIVE
-for INSERT
-to authenticated
-with check (
-  auth.is_community_member(community_id)
-);
-
-
 -- Create a function to check the number of participants
 CREATE OR REPLACE FUNCTION public.check_session_participants()
  RETURNS trigger

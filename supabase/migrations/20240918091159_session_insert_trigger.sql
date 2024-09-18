@@ -2,6 +2,7 @@
 CREATE OR REPLACE FUNCTION public.insert_creator_to_user_to_session()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
 AS $function$
 BEGIN
     INSERT INTO public.user_to_session (user_id, session_id, community_id)

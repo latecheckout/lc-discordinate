@@ -186,21 +186,31 @@ export type Database = {
       }
       user_to_session: {
         Row: {
+          community_id: string
           created_at: string | null
           session_id: string
           user_id: string
         }
         Insert: {
+          community_id: string
           created_at?: string | null
           session_id: string
           user_id: string
         }
         Update: {
+          community_id?: string
           created_at?: string | null
           session_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'user_to_session_community_id_fkey'
+            columns: ['community_id']
+            isOneToOne: false
+            referencedRelation: 'community'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'user_to_session_session_id_fkey'
             columns: ['session_id']

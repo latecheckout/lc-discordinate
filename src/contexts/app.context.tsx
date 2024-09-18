@@ -90,8 +90,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setCountdown({ timeLeft: 'Started!', isLessThanOneMinute: false })
           clearInterval(timer)
 
-          // Redirect to the session page
-          router.push(`/session/${upcomingSession.id}`)
+          // Redirect to the session page if the user is registered
+          if (upcomingSession.isUserRegistered) {
+            router.push(`/session/${upcomingSession.id}`)
+          }
         } else {
           const timeLeft = format(addSeconds(new Date(0), secondsLeft), 'mm:ss')
           setCountdown({

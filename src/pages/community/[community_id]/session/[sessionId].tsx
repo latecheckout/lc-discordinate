@@ -5,6 +5,7 @@ import { Tables } from '@/lib/database.types'
 import { fetchSessionAndConfig } from '@/lib/supabase/communityOperations'
 import { SessionButton } from '@/components/session/SessionButton'
 import { formatSecondsToMMSS } from '@/lib/utils'
+import { SessionCountDown } from '@/components/session/SessionCountDown'
 
 interface SessionConfig {
   countdown_seconds: number
@@ -16,7 +17,7 @@ type SessionPhase = 'countdown' | 'pre-button' | 'button-phase' | 'ended'
 
 export default function SessionPage() {
   const router = useRouter()
-  const { sessionId } = router.query
+  const { sessionId, community_id } = router.query
   const [session, setSession] = useState<Tables<'session'> | null>(null)
   const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
   const [countdown, setCountdown] = useState<number>(0)
@@ -36,6 +37,12 @@ export default function SessionPage() {
 
   useEffect(() => {
     if (!session || !sessionConfig) return
+
+    if (
+      new Date(session.scheduled_at).getTime() + sessionConfig.countdown_seconds * 1000 >
+      Date.now()
+    ) {
+    }
 
     const timer = setInterval(() => {
       const now = Date.now() / 1000
@@ -59,7 +66,7 @@ export default function SessionPage() {
         setButtonPhaseProgress(100)
       } else {
         setSessionPhase('countdown')
-        setCountdown(sessionStart - now)
+        setCountdown(buttonPhaseStart - now)
         setButtonPhaseProgress(100)
       }
     }, 1000)
@@ -75,28 +82,28 @@ export default function SessionPage() {
     if (error) console.error('Error invoking button function:', error)
   }
 
+  if (
+    !session ||
+    !sessionConfig ||
+    new Date(session.scheduled_at).getTime() + sessionConfig.countdown_seconds * 1000 > Date.now()
+  )
+    return null
+
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      {SessionPhase === 'countdown' && (
-        <div className="text-4xl font-bold mb-4 text-gray-800">
-          Session starts in: {formatSecondsToMMSS(countdown)}
-        </div>
-      )}
-      {SessionPhase === 'pre-button' && (
-        <div className="text-4xl font-bold mb-4 text-gray-800">
-          Button phase starts in: {formatSecondsToMMSS(countdown)}
-        </div>
+      {(SessionPhase === 'countdown' || SessionPhase === 'pre-button') && (
+        <SessionCountDown countdown={countdown} />
       )}
       {SessionPhase === 'button-phase' && (
-        <div className="text-4xl font-bold mb-4 text-red-600">Press the button!</div>
-      )}
-      {SessionPhase === 'button-phase' && (
-        <div className="w-72 h-5 bg-gray-200 rounded-full mb-4 overflow-hidden">
-          <div
-            className="h-full bg-red-500 transition-all duration-1000 ease-linear"
-            style={{ width: `${buttonPhaseProgress}%` }}
-          ></div>
-        </div>
+        <>
+          <div className="text-4xl font-bold mb-4 text-red-600">Press the button!</div>
+          <div className="w-72 h-5 bg-gray-200 rounded-full mb-4 overflow-hidden">
+            <div
+              className="h-full bg-red-500 transition-all duration-1000 ease-linear"
+              style={{ width: `${buttonPhaseProgress}%` }}
+            ></div>
+          </div>
+        </>
       )}
       {SessionPhase === 'ended' && (
         <div className="text-2xl font-bold text-gray-800">Session has ended</div>

@@ -103,7 +103,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           // Redirect to the session page if the user is registered
           if (upcomingSession.isUserRegistered) {
             setTimeout(() => {
-              router.push(`/session/${upcomingSession.id}`)
+              router.push(`community/${upcomingSession.community_id}/session/${upcomingSession.id}`)
             }, 3000) // 1 second delay
           }
         } else {

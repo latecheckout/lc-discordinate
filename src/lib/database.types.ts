@@ -189,7 +189,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      join_session_queue: {
+        Args: {
+          p_community_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

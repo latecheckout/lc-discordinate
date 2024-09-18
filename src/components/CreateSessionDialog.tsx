@@ -15,13 +15,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import DatePicker from '@/components/DatePicker'
 import TimeSlotPicker from '@/components/TimeSlotPicker'
 import { toast } from 'sonner'
 
 const sessionSchema = z.object({
-  scheduledDate: z.date(),
-  scheduledTime: z.string().min(1, { message: 'Please select a time slot' }),
+  sessionType: z.enum(['scheduled', 'queue']),
+  scheduledDate: z.date().optional(),
+  scheduledTime: z.string().optional(),
 })
 
 type SessionFormValues = z.infer<typeof sessionSchema>
@@ -38,6 +40,7 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
+      sessionType: 'queue',
       scheduledDate: undefined,
       scheduledTime: undefined,
     },
@@ -46,26 +49,39 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
   const handleCreateSession = async (values: SessionFormValues) => {
     setIsLoading(true)
     try {
-      if (!values.scheduledDate || !values.scheduledTime) {
-        throw new Error('Please select both a date and time')
+      if (values.sessionType === 'scheduled') {
+        if (!values.scheduledDate || !values.scheduledTime) {
+          throw new Error('Please select both a date and time')
+        }
+        const [hours, minutes] = values.scheduledTime.split(':').map(Number)
+        const scheduledDate = new Date(values.scheduledDate)
+        scheduledDate.setHours(hours, minutes, 0, 0)
+
+        const { error } = await supabase.from('session').insert([
+          {
+            community_id: communityId,
+            scheduled_at: scheduledDate.toISOString(),
+            created_by: user?.id ?? '',
+          },
+        ])
+
+        if (error) throw error
+      } else {
+        // Handle queue join
+        const { error } = await supabase.rpc('join_session_queue', {
+          p_community_id: communityId,
+        })
+
+        if (error) throw error
       }
-      const [hours, minutes] = values.scheduledTime.split(':').map(Number)
-      const scheduledDate = new Date(values.scheduledDate)
-      scheduledDate.setHours(hours, minutes, 0, 0)
-
-      const { error } = await supabase.from('session').insert([
-        {
-          community_id: communityId,
-          scheduled_at: scheduledDate.toISOString(),
-          created_by: user?.id ?? '',
-        },
-      ])
-
-      if (error) throw error
 
       setIsOpen(false)
       form.reset()
-      toast.success('Session created successfully!')
+      toast.success(
+        values.sessionType === 'scheduled'
+          ? 'Session created successfully!'
+          : 'Joined the queue successfully!',
+      )
     } catch (error) {
       console.error('Error creating session:', error)
       toast.error('Failed to create session. Please try again.')
@@ -78,6 +94,7 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
   useEffect(() => {
     if (!isOpen) {
       form.reset({
+        sessionType: 'queue',
         scheduledDate: undefined,
         scheduledTime: undefined,
       })
@@ -99,35 +116,72 @@ export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
           <form onSubmit={form.handleSubmit(handleCreateSession)} className="space-y-4">
             <FormField
               control={form.control}
-              name="scheduledDate"
+              name="sessionType"
               render={({ field }) => (
                 <FormItem>
-                  <Label className="pr-4">Date</Label>
+                  <Label>Session Type</Label>
                   <FormControl>
-                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="queue" />
+                        </FormControl>
+                        <Label className="font-normal">Join the queue</Label>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="scheduled" />
+                        </FormControl>
+                        <Label className="font-normal">Schedule a session</Label>
+                      </FormItem>
+                    </RadioGroup>
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="scheduledTime"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Time Slot</Label>
-                  <FormControl>
-                    <TimeSlotPicker
-                      onTimeSelect={field.onChange}
-                      selectedDate={form.watch('scheduledDate')}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {form.watch('sessionType') === 'scheduled' && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="scheduledDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label className="pr-4">Date</Label>
+                      <FormControl>
+                        <DatePicker date={field.value || null} setDate={field.onChange} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="scheduledTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label>Time Slot</Label>
+                      <FormControl>
+                        <TimeSlotPicker
+                          onTimeSelect={field.onChange}
+                          selectedDate={form.watch('scheduledDate') || null}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create Session'}
+              {isLoading
+                ? 'Creating...'
+                : form.watch('sessionType') === 'scheduled'
+                  ? 'Create Session'
+                  : 'Join Queue'}
             </Button>
           </form>
         </Form>

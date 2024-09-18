@@ -11,6 +11,7 @@ import { useAuth } from './auth.context'
 import { fetchCommunities } from '@/lib/supabase/communityOperations'
 import { supabase } from '@/lib/supabase/client'
 import { differenceInSeconds, addSeconds, format } from 'date-fns'
+import { useRouter } from 'next/router'
 
 type UpcomingSession = Tables<'session'> & { isUserRegistered: boolean }
 
@@ -29,6 +30,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 
 // Create a provider component
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const router = useRouter()
   const { session, user } = useAuth()
   const [communities, setCommunities] = useState<Tables<'community'>[] | null>(null)
   const [upcomingSession, setUpcomingSession] = useState<UpcomingSession | null>(null)
@@ -87,6 +89,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (secondsLeft <= 0) {
           setCountdown({ timeLeft: 'Started!', isLessThanOneMinute: false })
           clearInterval(timer)
+
+          // Redirect to the session page
+          router.push(`/session/${upcomingSession.id}`)
         } else {
           const timeLeft = format(addSeconds(new Date(0), secondsLeft), 'mm:ss')
           setCountdown({
@@ -98,7 +103,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       return () => clearInterval(timer)
     }
-  }, [upcomingSession])
+  }, [upcomingSession, router])
 
   useEffect(() => {
     const getCommunities = async (dToken: string) => {

@@ -46,17 +46,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'Button press_session_id_fkey'
-            columns: ['session_id']
-            isOneToOne: false
-            referencedRelation: 'session'
-            referencedColumns: ['id']
-          },
-          {
             foreignKeyName: 'Button press_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'button_press_session_id_fkey'
+            columns: ['session_id']
+            isOneToOne: false
+            referencedRelation: 'session'
             referencedColumns: ['id']
           },
         ]
@@ -98,34 +98,34 @@ export type Database = {
       }
       session: {
         Row: {
-          community_id: string | null
-          created_at: string | null
+          community_id: string
+          config_id: string
+          created_at: string
           created_by: string
-          current_score: number | null
-          final_score: number | null
+          current_score: number
+          final_score: number
           id: string
           scheduled_at: string
-          started_by: string | null
         }
         Insert: {
-          community_id?: string | null
-          created_at?: string | null
-          created_by: string
-          current_score?: number | null
-          final_score?: number | null
+          community_id: string
+          config_id?: string
+          created_at?: string
+          created_by?: string
+          current_score?: number
+          final_score?: number
           id?: string
           scheduled_at: string
-          started_by?: string | null
         }
         Update: {
-          community_id?: string | null
-          created_at?: string | null
+          community_id?: string
+          config_id?: string
+          created_at?: string
           created_by?: string
-          current_score?: number | null
-          final_score?: number | null
+          current_score?: number
+          final_score?: number
           id?: string
           scheduled_at?: string
-          started_by?: string | null
         }
         Relationships: [
           {
@@ -136,20 +136,47 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'session_config_id_fkey'
+            columns: ['config_id']
+            isOneToOne: false
+            referencedRelation: 'session_config'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'session_created_by_fkey'
             columns: ['created_by']
             isOneToOne: false
             referencedRelation: 'users'
             referencedColumns: ['id']
           },
-          {
-            foreignKeyName: 'session_started_by_fkey'
-            columns: ['started_by']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
         ]
+      }
+      session_config: {
+        Row: {
+          button_press_seconds: number
+          button_press_timeout_seconds: number
+          countdown_seconds: number
+          created_at: string
+          id: string
+          is_default: boolean
+        }
+        Insert: {
+          button_press_seconds?: number
+          button_press_timeout_seconds?: number
+          countdown_seconds?: number
+          created_at?: string
+          id?: string
+          is_default?: boolean
+        }
+        Update: {
+          button_press_seconds?: number
+          button_press_timeout_seconds?: number
+          countdown_seconds?: number
+          created_at?: string
+          id?: string
+          is_default?: boolean
+        }
+        Relationships: []
       }
       user_to_community: {
         Row: {
@@ -232,6 +259,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_default_session_config_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       join_session_queue: {
         Args: {
           p_community_id: string

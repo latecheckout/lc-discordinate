@@ -63,9 +63,12 @@ export default function SessionPage() {
     return () => clearInterval(timer)
   }, [session])
 
-  const handleButtonClick = () => {
-    if (isButtonEnabled) {
-      console.log('Clicked!')
+  const handleButtonClick = async () => {
+    if (isButtonEnabled && session) {
+      const { data, error } = await supabase.functions.invoke('button', {
+        body: { session_id: session.id },
+      })
+      console.log('Response:', data, error)
     }
   }
 

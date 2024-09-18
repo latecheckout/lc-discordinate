@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
-import { differenceInSeconds, addMinutes, format } from 'date-fns'
+import { differenceInSeconds, addMinutes, format, addSeconds } from 'date-fns'
 import { supabase } from '@/lib/supabase/client'
 import { Tables } from '@/lib/database.types'
 
@@ -45,11 +45,8 @@ export default function SessionPage() {
       const secondsToStart = differenceInSeconds(sessionStart, now)
       const secondsToEnd = differenceInSeconds(sessionEnd, now)
 
-      if (secondsToStart > 60) {
-        setCountdown(format(addMinutes(new Date(0), Math.floor(secondsToStart / 60)), 'mm:ss'))
-        setIsButtonEnabled(false)
-      } else if (secondsToStart > 0) {
-        setCountdown(format(new Date(0), 'ss'))
+      if (secondsToStart > 0) {
+        setCountdown(format(addSeconds(new Date(0), secondsToStart), 'mm:ss'))
         setIsButtonEnabled(false)
       } else if (secondsToEnd > 0) {
         const progress = (secondsToEnd / (SESSION_DURATION_MINUTES * 60)) * 100
@@ -82,12 +79,15 @@ export default function SessionPage() {
         </div>
       )}
       {!isSessionOver && !countdown && (
-        <div className="w-72 h-5 bg-gray-200 rounded-full mb-4 overflow-hidden">
-          <div
-            className="h-full bg-green-500 transition-all duration-1000 ease-linear"
-            style={{ width: `${sessionProgress}%` }}
-          ></div>
-        </div>
+        <>
+          <div className="text-2xl font-bold mb-4 text-gray-800">Session in progress</div>
+          <div className="w-72 h-5 bg-gray-200 rounded-full mb-4 overflow-hidden">
+            <div
+              className="h-full bg-green-500 transition-all duration-1000 ease-linear"
+              style={{ width: `${sessionProgress}%` }}
+            ></div>
+          </div>
+        </>
       )}
       {isSessionOver ? (
         <div className="text-2xl font-bold text-gray-800">Session has ended</div>

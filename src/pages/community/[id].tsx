@@ -132,7 +132,7 @@ export default function CommunityPage() {
           <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-primary-foreground flex items-center">
               <CalendarIcon className="mr-2 h-6 w-6" />
-              Upcoming Session
+              {countdown.timeLeft === 'Ongoing' ? 'Ongoing Session' : 'Upcoming Session'}
             </h2>
             {countdown.timeLeft ? (
               <span
@@ -178,7 +178,7 @@ export default function CommunityPage() {
                   : 'Loading participants...'}
               </Badge>
             </div>
-            {!upcomingSession.isUserRegistered && (
+            {!upcomingSession.isUserRegistered && countdown.timeLeft !== 'Ongoing' && (
               <Button onClick={handleRegister} className="mt-4">
                 {isLoadingRegister ? 'Registering...' : 'Register for Session'}
               </Button>
@@ -186,6 +186,14 @@ export default function CommunityPage() {
             {upcomingSession.isUserRegistered && (
               <p className="mt-4 text-sm text-muted-foreground">
                 You are registered for this session.
+                {countdown.timeLeft === 'Ongoing' && (
+                  <Button
+                    onClick={() => router.push(`/session/${upcomingSession.id}`)}
+                    className="ml-4"
+                  >
+                    Join Session
+                  </Button>
+                )}
               </p>
             )}
             {/* Add more session details here if needed */}

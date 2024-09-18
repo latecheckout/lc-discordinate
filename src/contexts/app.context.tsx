@@ -10,7 +10,7 @@ import React, {
 import { useAuth } from './auth.context'
 import { fetchCommunities } from '@/lib/supabase/communityOperations'
 import { supabase } from '@/lib/supabase/client'
-import { differenceInSeconds, addSeconds, format } from 'date-fns'
+import { differenceInSeconds, addSeconds, format, addMinutes } from 'date-fns'
 import { useRouter } from 'next/router'
 
 type UpcomingSession = Tables<'session'> & { isUserRegistered: boolean }
@@ -47,6 +47,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       try {
+        const now = new Date()
+        const fiveMinutesAgo = addMinutes(now, -5)
+
         const { data, error } = await supabase
           .from('session')
           .select(
@@ -56,7 +59,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           `,
           )
           .eq('community_id', communityId)
-          .gte('scheduled_at', new Date().toISOString())
+          .gte('scheduled_at', fiveMinutesAgo.toISOString())
           .order('scheduled_at', { ascending: true })
           .limit(1)
           .maybeSingle()
@@ -72,7 +75,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setUpcomingSession(null)
         }
       } catch (error) {
-        console.error('Error fetching upcoming session:', error)
+        console.error('Error fetching upcoming or ongoing session:', error)
         setUpcomingSession(null)
       }
     },
@@ -84,22 +87,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const timer = setInterval(() => {
         const now = new Date()
         const sessionStart = new Date(upcomingSession.scheduled_at)
-        const secondsLeft = differenceInSeconds(sessionStart, now)
+        const sessionEnd = addMinutes(sessionStart, 5)
+        const secondsToStart = differenceInSeconds(sessionStart, now)
+        const secondsToEnd = differenceInSeconds(sessionEnd, now)
 
-        if (secondsLeft <= 0) {
-          setCountdown({ timeLeft: 'Started!', isLessThanOneMinute: false })
-          clearInterval(timer)
+        if (secondsToStart > 0) {
+          const timeLeft = format(addSeconds(new Date(0), secondsToStart), 'mm:ss')
+          setCountdown({
+            timeLeft,
+            isLessThanOneMinute: secondsToStart < 60,
+          })
+        } else if (secondsToEnd > 0) {
+          setCountdown({ timeLeft: 'Ongoing', isLessThanOneMinute: false })
 
           // Redirect to the session page if the user is registered
           if (upcomingSession.isUserRegistered) {
-            router.push(`/session/${upcomingSession.id}`)
+            setTimeout(() => {
+              router.push(`/session/${upcomingSession.id}`)
+            }, 3000) // 1 second delay
           }
         } else {
-          const timeLeft = format(addSeconds(new Date(0), secondsLeft), 'mm:ss')
-          setCountdown({
-            timeLeft,
-            isLessThanOneMinute: secondsLeft < 60,
-          })
+          setCountdown({ timeLeft: 'Ended', isLessThanOneMinute: false })
+          clearInterval(timer)
         }
       }, 1000)
 

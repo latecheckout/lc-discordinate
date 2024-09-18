@@ -38,6 +38,10 @@ BEGIN
     VALUES (p_community_id, v_next_slot, auth.uid())
     RETURNING id INTO v_new_session_id;
 
+    -- Insert into user_to_session table
+    INSERT INTO user_to_session (user_id, session_id)
+    VALUES (auth.uid(), v_new_session_id);
+
     -- Log the creation of the new session (optional)
     RAISE NOTICE 'New queue session created with ID: % for time: %', v_new_session_id, v_next_slot;
 

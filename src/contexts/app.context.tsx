@@ -12,10 +12,11 @@ import { fetchCommunities } from '@/lib/supabase/communityOperations'
 import { supabase } from '@/lib/supabase/client'
 import { differenceInSeconds, addSeconds, format } from 'date-fns'
 
-// Define the shape of your context
+type UpcomingSession = Tables<'session'> & { isUserRegistered: boolean }
+
 interface AppContextType {
   communities: Tables<'community'>[]
-  upcomingSession: Tables<'session'> | null
+  upcomingSession: UpcomingSession | null
   countdown: {
     timeLeft: string
     isLessThanOneMinute: boolean
@@ -30,38 +31,51 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { session, user } = useAuth()
   const [communities, setCommunities] = useState<Tables<'community'>[] | null>(null)
-  const [upcomingSession, setUpcomingSession] = useState<Tables<'session'> | null>(null)
+  const [upcomingSession, setUpcomingSession] = useState<UpcomingSession | null>(null)
   const [countdown, setCountdown] = useState<{ timeLeft: string; isLessThanOneMinute: boolean }>({
     timeLeft: '',
     isLessThanOneMinute: false,
   })
 
-  const fetchUpcomingSession = useCallback(async (communityId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('session')
-        .select(`*`)
-        .eq('community_id', communityId)
-        .gte('scheduled_at', new Date().toISOString())
-        .order('scheduled_at', { ascending: true })
-        .limit(1)
-        .single()
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No upcoming session found
-          setUpcomingSession(null)
-        } else {
-          throw error
-        }
-      } else {
-        setUpcomingSession(data)
+  const fetchUpcomingSession = useCallback(
+    async (communityId: string) => {
+      if (!user) {
+        setUpcomingSession(null)
+        return
       }
-    } catch (error) {
-      console.error('Error fetching upcoming session:', error)
-      setUpcomingSession(null)
-    }
-  }, [])
+
+      try {
+        const { data, error } = await supabase
+          .from('session')
+          .select(
+            `
+            *,
+            user_to_session (user_id)
+          `,
+          )
+          .eq('community_id', communityId)
+          .gte('scheduled_at', new Date().toISOString())
+          .order('scheduled_at', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+
+        if (error) {
+          throw error
+        } else if (data) {
+          const isUserRegistered = data.user_to_session.some(
+            (registration) => registration.user_id === user.id,
+          )
+          setUpcomingSession({ ...data, isUserRegistered })
+        } else {
+          setUpcomingSession(null)
+        }
+      } catch (error) {
+        console.error('Error fetching upcoming session:', error)
+        setUpcomingSession(null)
+      }
+    },
+    [user],
+  )
 
   useEffect(() => {
     if (upcomingSession) {

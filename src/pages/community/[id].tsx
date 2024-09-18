@@ -8,13 +8,18 @@ import { CreateSessionDialog } from '@/components/CreateSessionDialog'
 import { useApp } from '@/contexts/app.context'
 import { CalendarIcon, ClockIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/auth.context'
+import { supabase } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
 
 export default function CommunityPage() {
   const router = useRouter()
   const { id } = router.query
   const [userCount, setUserCount] = useState<number | null>(null)
   const [community, setCommunity] = useState<Tables<'community'> | null>(null)
+  const [isLoadingRegister, setIsLoadingRegister] = useState(false)
   const { upcomingSession, countdown, fetchUpcomingSession } = useApp()
+  const { user } = useAuth()
 
   useEffect(() => {
     const fetchCommunityDetails = async () => {
@@ -35,6 +40,29 @@ export default function CommunityPage() {
       fetchCommunityDetails()
     }
   }, [id, fetchUpcomingSession])
+
+  const handleRegister = async () => {
+    if (!user || !upcomingSession || !community) return
+
+    try {
+      setIsLoadingRegister(true)
+      const { error } = await supabase
+        .from('user_to_session')
+        .insert({ user_id: user.id, session_id: upcomingSession.id, community_id: community.id })
+
+      if (error) throw error
+
+      // Refetch the session to update the registration status
+      if (community) {
+        await fetchUpcomingSession(community.id)
+      }
+    } catch (error) {
+      console.error('Error registering for session:', error)
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setIsLoadingRegister(false)
+    }
+  }
 
   if (!community) {
     return (
@@ -119,6 +147,16 @@ export default function CommunityPage() {
                 {new Date(upcomingSession.scheduled_at).toLocaleString()}
               </p>
             </div>
+            {!upcomingSession.isUserRegistered && (
+              <Button onClick={handleRegister} className="mt-4">
+                {isLoadingRegister ? 'Registering...' : 'Register for Session'}
+              </Button>
+            )}
+            {upcomingSession.isUserRegistered && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                You are registered for this session.
+              </p>
+            )}
             {/* Add more session details here if needed */}
           </div>
         </div>

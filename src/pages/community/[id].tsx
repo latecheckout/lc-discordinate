@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth.context'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Users } from 'lucide-react' // Add this import
 
 export default function CommunityPage() {
   const router = useRouter()
@@ -20,6 +22,7 @@ export default function CommunityPage() {
   const [isLoadingRegister, setIsLoadingRegister] = useState(false)
   const { upcomingSession, countdown, fetchUpcomingSession } = useApp()
   const { user } = useAuth()
+  const [participantCount, setParticipantCount] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchCommunityDetails = async () => {
@@ -40,6 +43,26 @@ export default function CommunityPage() {
       fetchCommunityDetails()
     }
   }, [id, fetchUpcomingSession])
+
+  useEffect(() => {
+    const fetchParticipantCount = async () => {
+      if (upcomingSession) {
+        try {
+          const { count, error } = await supabase
+            .from('user_to_session')
+            .select('*', { count: 'exact', head: true })
+            .eq('session_id', upcomingSession.id)
+
+          if (error) throw error
+          setParticipantCount(count)
+        } catch (error) {
+          console.error('Error fetching participant count:', error)
+        }
+      }
+    }
+
+    fetchParticipantCount()
+  }, [upcomingSession])
 
   const handleRegister = async () => {
     if (!user || !upcomingSession || !community) return
@@ -146,6 +169,14 @@ export default function CommunityPage() {
               <p className="font-medium">
                 {new Date(upcomingSession.scheduled_at).toLocaleString()}
               </p>
+            </div>
+            <div className="flex items-center text-foreground mb-4">
+              <Badge className="text-sm flex items-center gap-1 px-3 py-1">
+                <Users className="h-4 w-4" />
+                {participantCount !== null
+                  ? `${participantCount} participant${participantCount !== 1 ? 's' : ''}`
+                  : 'Loading participants...'}
+              </Badge>
             </div>
             {!upcomingSession.isUserRegistered && (
               <Button onClick={handleRegister} className="mt-4">

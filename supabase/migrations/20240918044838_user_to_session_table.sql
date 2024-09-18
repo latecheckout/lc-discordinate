@@ -1,13 +1,13 @@
 create table "public"."user_to_session" (
     "user_id" uuid not null,
     "session_id" uuid not null,
+    "community_id" uuid not null,
     "created_at" timestamp with time zone default now()
 );
 
-
 alter table "public"."user_to_session" enable row level security;
 
-CREATE UNIQUE INDEX user_to_session_pkey ON public.user_to_session USING btree (user_id, session_id);
+CREATE UNIQUE INDEX user_to_session_pkey ON public.user_to_session USING btree (user_id, session_id, community_id);
 
 alter table "public"."user_to_session" add constraint "user_to_session_pkey" PRIMARY KEY using index "user_to_session_pkey";
 
@@ -18,6 +18,10 @@ alter table "public"."user_to_session" validate constraint "user_to_session_sess
 alter table "public"."user_to_session" add constraint "user_to_session_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) not valid;
 
 alter table "public"."user_to_session" validate constraint "user_to_session_user_id_fkey";
+
+alter table "public"."user_to_session" add constraint "user_to_session_community_id_fkey" FOREIGN KEY (community_id) REFERENCES community(id) not valid;
+
+alter table "public"."user_to_session" validate constraint "user_to_session_community_id_fkey";
 
 grant delete on table "public"."user_to_session" to "anon";
 
@@ -60,6 +64,24 @@ grant trigger on table "public"."user_to_session" to "service_role";
 grant truncate on table "public"."user_to_session" to "service_role";
 
 grant update on table "public"."user_to_session" to "service_role";
+
+
+create policy "User can select their own user_to_session relationships"
+on "public"."user_to_session"
+as permissive
+for select
+to authenticated
+using ((user_id = auth.uid()));
+
+
+create policy "Community members can insert their user_to_session relationships"
+on "public"."user_to_session"
+as PERMISSIVE
+for INSERT
+to authenticated
+with check (
+  auth.is_community_member(community_id)
+);
 
 
 -- Create a function to check the number of participants

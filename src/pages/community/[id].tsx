@@ -1,35 +1,20 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '@/components/Layout'
 import Image from 'next/image'
 import { getCommunityWithUserCount } from '@/lib/supabase/communityOperations'
 import { Tables } from '@/lib/database.types'
 import { CreateSessionDialog } from '@/components/CreateSessionDialog'
-import { supabase } from '@/lib/supabase/client'
+import { useApp } from '@/contexts/app.context'
+import { CalendarIcon, ClockIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function CommunityPage() {
   const router = useRouter()
   const { id } = router.query
   const [userCount, setUserCount] = useState<number | null>(null)
   const [community, setCommunity] = useState<Tables<'community'> | null>(null)
-  const [existingSession, setExistingSession] = useState<boolean>(false)
-
-  const checkExistingSession = useCallback(async (communityId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('session')
-        .select('id')
-        .eq('community_id', communityId)
-        .gte('scheduled_at', new Date().toISOString())
-        .order('scheduled_at', { ascending: true })
-        .limit(1)
-
-      if (error) throw error
-      setExistingSession(data.length > 0)
-    } catch (error) {
-      console.error('Error checking existing session:', error)
-    }
-  }, [])
+  const { upcomingSession, countdown, fetchUpcomingSession } = useApp()
 
   useEffect(() => {
     const fetchCommunityDetails = async () => {
@@ -39,7 +24,7 @@ export default function CommunityPage() {
         setUserCount(userCount)
 
         if (community) {
-          await checkExistingSession(community.id)
+          await fetchUpcomingSession(community.id)
         }
       } catch (error) {
         console.error('Failed to get community details', error)
@@ -49,13 +34,7 @@ export default function CommunityPage() {
     if (id) {
       fetchCommunityDetails()
     }
-  }, [id, checkExistingSession])
-
-  const handleSessionCreated = useCallback(() => {
-    if (community) {
-      checkExistingSession(community.id)
-    }
-  }, [community, checkExistingSession])
+  }, [id, fetchUpcomingSession])
 
   if (!community) {
     return (
@@ -97,9 +76,55 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      {!existingSession && community && (
-        <CreateSessionDialog communityId={community.id} onSessionCreated={handleSessionCreated} />
+      {upcomingSession && (
+        <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
+          <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-primary-foreground flex items-center">
+              <CalendarIcon className="mr-2 h-6 w-6" />
+              Upcoming Session
+            </h2>
+            {countdown.timeLeft ? (
+              <span
+                className={cn(
+                  'text-emerald-100 text-sm font-medium bg-emerald-600/80 px-3 py-1 rounded-full shadow-md w-28 text-center',
+                  countdown.isLessThanOneMinute && 'animate-pulse',
+                )}
+              >
+                {countdown.timeLeft}
+              </span>
+            ) : (
+              <span className="text-primary-foreground text-sm font-medium px-3 py-1 rounded-full flex items-center shadow-md w-28 justify-center">
+                <span className="mr-2">Loading</span>
+                <span className="flex space-x-1">
+                  <span
+                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
+                    style={{ animationDelay: '0ms' }}
+                  ></span>
+                  <span
+                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
+                    style={{ animationDelay: '150ms' }}
+                  ></span>
+                  <span
+                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
+                    style={{ animationDelay: '300ms' }}
+                  ></span>
+                </span>
+              </span>
+            )}
+          </div>
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center text-foreground mb-2">
+              <ClockIcon className="mr-2 h-5 w-5 text-primary/70" />
+              <p className="font-medium">
+                {new Date(upcomingSession.scheduled_at).toLocaleString()}
+              </p>
+            </div>
+            {/* Add more session details here if needed */}
+          </div>
+        </div>
       )}
+
+      {!upcomingSession && community && <CreateSessionDialog communityId={community.id} />}
     </Layout>
   )
 }

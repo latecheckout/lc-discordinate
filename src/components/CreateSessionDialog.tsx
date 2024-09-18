@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import DatePicker from '@/components/DatePicker'
 import TimeSlotPicker from '@/components/TimeSlotPicker'
 import { toast } from 'sonner'
+import { useApp } from '@/contexts/app.context'
 
 const sessionSchema = z.object({
   sessionType: z.enum(['scheduled', 'queue']),
@@ -30,13 +31,13 @@ type SessionFormValues = z.infer<typeof sessionSchema>
 
 interface CreateSessionDialogProps {
   communityId: string
-  onSessionCreated: () => void
 }
 
-export function CreateSessionDialog({ communityId, onSessionCreated }: CreateSessionDialogProps) {
+export function CreateSessionDialog({ communityId }: CreateSessionDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { user } = useAuth()
+  const { fetchUpcomingSession } = useApp()
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -83,7 +84,7 @@ export function CreateSessionDialog({ communityId, onSessionCreated }: CreateSes
           ? 'Session created successfully!'
           : 'Joined the queue successfully!',
       )
-      onSessionCreated()
+      fetchUpcomingSession(communityId)
     } catch (error) {
       console.error('Error creating session:', error)
       toast.error('Failed to create session. Please try again.')

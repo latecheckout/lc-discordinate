@@ -12,7 +12,8 @@ import { useAuth } from '@/contexts/auth.context'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Users } from 'lucide-react' // Add this import
+import { Users } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function CommunityPage() {
   const router = useRouter()
@@ -76,9 +77,8 @@ export default function CommunityPage() {
       if (error) throw error
 
       // Refetch the session to update the registration status
-      if (community) {
-        await fetchUpcomingSession(community.id)
-      }
+      await fetchUpcomingSession(community.id)
+      toast.success('You have been registered for the session.')
     } catch (error) {
       console.error('Error registering for session:', error)
       // Handle error (e.g., show an error message to the user)
@@ -127,7 +127,7 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      {upcomingSession && (
+      {upcomingSession && countdown.timeLeft && (
         <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
           <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-primary-foreground flex items-center">

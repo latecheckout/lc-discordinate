@@ -19,7 +19,7 @@ export const SessionButton: FC<{ cooldown: number; onClick: () => void; disabled
       ${
         isButtonEnabled
           ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-          : 'bg-red-600 cursor-not-allowed'
+          : 'bg-muted-foreground cursor-not-allowed'
       }`}
       onClick={handleButtonClick}
       disabled={!isButtonEnabled}

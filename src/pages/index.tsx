@@ -3,7 +3,6 @@ import { useApp } from '@/contexts/app.context'
 import { useAuth } from '@/contexts/auth.context'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import { useEffect } from 'react'
 
 export default function Home() {
   const { user } = useAuth()
@@ -28,7 +27,7 @@ export default function Home() {
                 <li
                   key={index}
                   className="py-4 flex items-center hover:bg-accent transition duration-150 ease-in-out cursor-pointer px-4 rounded-lg"
-                  onClick={() => handleCommunityClick(community.guild_id)}
+                  onClick={() => handleCommunityClick(community.id)}
                 >
                   <div className="flex items-center">
                     {community.pfp ? (

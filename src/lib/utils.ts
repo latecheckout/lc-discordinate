@@ -16,3 +16,10 @@ export const getURL = () => {
   url = url.endsWith('/') ? url : `${url}/`
   return url
 }
+
+export const formatSecondsToMMSS = (number?: number) => {
+  if (!number) return '--:--'
+  const minutes = Math.floor(number / 60)
+  const seconds = Math.floor(number % 60)
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
+}

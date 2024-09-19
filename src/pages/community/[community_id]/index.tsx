@@ -16,7 +16,7 @@ import { Users } from 'lucide-react' // Add this import
 
 export default function CommunityPage() {
   const router = useRouter()
-  const { id } = router.query
+  const { community_id } = router.query
   const [userCount, setUserCount] = useState<number | null>(null)
   const [community, setCommunity] = useState<Tables<'community'> | null>(null)
   const [isLoadingRegister, setIsLoadingRegister] = useState(false)
@@ -27,7 +27,7 @@ export default function CommunityPage() {
   useEffect(() => {
     const fetchCommunityDetails = async () => {
       try {
-        const { community, userCount } = await getCommunityWithUserCount(id as string)
+        const { community, userCount } = await getCommunityWithUserCount(community_id as string)
         setCommunity(community)
         setUserCount(userCount)
 
@@ -39,10 +39,10 @@ export default function CommunityPage() {
       }
     }
 
-    if (id) {
+    if (community_id) {
       fetchCommunityDetails()
     }
-  }, [id, fetchUpcomingSession])
+  }, [community_id, fetchUpcomingSession])
 
   useEffect(() => {
     const fetchParticipantCount = async () => {
@@ -188,7 +188,9 @@ export default function CommunityPage() {
                 You are registered for this session.
                 {countdown.timeLeft === 'Ongoing' && (
                   <Button
-                    onClick={() => router.push(`/session/${upcomingSession.id}`)}
+                    onClick={() =>
+                      router.push(`/community/${community.id}/session/${upcomingSession.id}`)
+                    }
                     className="ml-4"
                   >
                     Join Session

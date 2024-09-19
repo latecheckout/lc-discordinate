@@ -159,6 +159,7 @@ export type Database = {
           created_at: string
           id: string
           is_default: boolean
+          score_window_seconds: number
         }
         Insert: {
           button_press_seconds?: number
@@ -167,6 +168,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          score_window_seconds?: number
         }
         Update: {
           button_press_seconds?: number
@@ -175,6 +177,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          score_window_seconds?: number
         }
         Relationships: []
       }

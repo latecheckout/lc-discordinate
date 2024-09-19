@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase/client'
 import { Tables } from '@/lib/database.types'
 import { fetchSessionAndConfig } from '@/lib/supabase/communityOperations'
 import { SessionButton } from '@/components/session/SessionButton'
-import { formatSecondsToMMSS } from '@/lib/utils'
 import { SessionCountDown } from '@/components/session/SessionCountDown'
 
 interface SessionConfig {
@@ -17,7 +16,7 @@ type SessionPhase = 'countdown' | 'pre-button' | 'button-phase' | 'ended'
 
 export default function SessionPage() {
   const router = useRouter()
-  const { sessionId, community_id } = router.query
+  const { sessionId } = router.query
   const [session, setSession] = useState<Tables<'session'> | null>(null)
   const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
   const [countdown, setCountdown] = useState<number>(0)
@@ -82,17 +81,17 @@ export default function SessionPage() {
     if (error) console.error('Error invoking button function:', error)
   }
 
-  if (
-    !session ||
-    !sessionConfig ||
-    new Date(session.scheduled_at).getTime() + sessionConfig.countdown_seconds * 1000 > Date.now()
-  )
+  if (SessionPhase === 'countdown') {
     return null
+  }
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      {(SessionPhase === 'countdown' || SessionPhase === 'pre-button') && (
-        <SessionCountDown countdown={countdown} />
+      {SessionPhase === 'pre-button' && (
+        <SessionCountDown
+          countdownRemaining={countdown}
+          countdownDuration={sessionConfig?.countdown_seconds || 0}
+        />
       )}
       {SessionPhase === 'button-phase' && (
         <>
@@ -108,7 +107,7 @@ export default function SessionPage() {
       {SessionPhase === 'ended' && (
         <div className="text-2xl font-bold text-gray-800">Session has ended</div>
       )}
-      {(SessionPhase === 'button-phase' || SessionPhase === 'pre-button') && (
+      {SessionPhase === 'button-phase' && (
         <SessionButton
           cooldown={sessionConfig?.button_press_timeout_seconds || 0}
           onClick={handleButtonClick}

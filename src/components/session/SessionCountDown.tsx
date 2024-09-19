@@ -1,8 +1,49 @@
 import { formatSecondsToMMSS } from '@/lib/utils'
-import { FC } from 'react'
+import { FC, useEffect, useState } from 'react'
 
-export const SessionCountDown: FC<{ countdown: number }> = ({ countdown }) => {
+export const SessionCountDown: FC<{ countdownRemaining: number; countdownDuration: number }> = ({
+  countdownRemaining,
+  countdownDuration,
+}) => {
+  const [progress, setProgress] = useState(100)
+  const circumference = 2 * Math.PI * 45
+
+  useEffect(() => {
+    setProgress((countdownRemaining / countdownDuration) * 100)
+  }, [countdownRemaining, countdownDuration])
+
   return (
-    <div className="text-4xl font-bold mb-4 text-gray-800">{formatSecondsToMMSS(countdown)}</div>
+    <div className="flex flex-col items-center justify-center">
+      <div className="text-3xl font-bold mb-4 text-gray-800">Get Ready!</div>
+      <div className="relative w-64 h-64">
+        <svg className="w-full h-full" viewBox="0 0 100 100">
+          <circle
+            className="text-gray-200 stroke-current"
+            strokeWidth="8"
+            cx="50"
+            cy="50"
+            r="45"
+            fill="transparent"
+          />
+          <circle
+            className="text-blue-600 stroke-current"
+            strokeWidth="8"
+            strokeLinecap="round"
+            cx="50"
+            cy="50"
+            r="45"
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - progress / 100)}
+            transform="rotate(-90 50 50)"
+          />
+        </svg>
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+          <div className="text-5xl font-bold text-gray-800">
+            {formatSecondsToMMSS(Math.ceil(countdownRemaining))}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

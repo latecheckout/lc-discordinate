@@ -28,6 +28,7 @@ export default function SessionPage() {
   const [countdown, setCountdown] = useState<number>(0)
   const [SessionPhase, setSessionPhase] = useState<SessionPhase>('countdown')
   const [buttonPhaseProgress, setButtonPhaseProgress] = useState(0)
+  const [currentScore, setCurrentScore] = useState<number | null>(null)
 
   const fetchSessionData = useCallback(async () => {
     if (!sessionId || typeof sessionId !== 'string') return
@@ -83,6 +84,32 @@ export default function SessionPage() {
     return () => clearInterval(timer)
   }, [session, sessionConfig, fetchSessionData, fetchUpcomingSession])
 
+  useEffect(() => {
+    if (!session) return
+
+    const channel = supabase
+      .channel(`session_${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'session',
+          filter: `id=eq.${session.id}`,
+        },
+        (payload) => {
+          if (payload.new && 'current_score' in payload.new) {
+            setCurrentScore(payload.new.current_score as number)
+          }
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session])
+
   const handleButtonClick = async () => {
     if (!session || !sessionConfig) return
     const { error } = await supabase.functions.invoke('button', {
@@ -134,6 +161,12 @@ export default function SessionPage() {
                   style={{ width: `${buttonPhaseProgress}%` }}
                 ></div>
               </div>
+              {currentScore !== null && (
+                <div className="mb-4">
+                  <p className="text-lg font-semibold">Current Score:</p>
+                  <p className="text-3xl font-bold text-primary">{currentScore}</p>
+                </div>
+              )}
               <SessionButton
                 cooldown={sessionConfig?.button_press_timeout_seconds || 0}
                 onClick={handleButtonClick}

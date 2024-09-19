@@ -54,13 +54,14 @@ export async function upsertUserCommunityRelationships(
 export async function getCommunityWithUserCount(
   guildId: string,
 ): Promise<{ community: Tables<'community'> | null; userCount: number }> {
-  const {
-    data,
-    error: communityError,
-    count,
-  } = await supabase
+  const { data, error: communityError } = await supabase
     .from('community')
-    .select('*, user_to_community!inner(*)', { count: 'exact' })
+    .select(
+      `
+      *,
+      user_count:user_to_community(count)
+    `,
+    )
     .eq('guild_id', guildId)
     .single()
 
@@ -70,7 +71,7 @@ export async function getCommunityWithUserCount(
 
   return {
     community: data,
-    userCount: count ?? 0,
+    userCount: data?.user_count?.[0]?.count ?? 0,
   }
 }
 

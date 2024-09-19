@@ -4,7 +4,6 @@ import Layout from '@/components/Layout'
 import Image from 'next/image'
 import { getCommunityWithUserCount } from '@/lib/supabase/communityOperations'
 import { Tables } from '@/lib/database.types'
-import { CreateSessionDialog } from '@/components/CreateSessionDialog'
 import { useApp } from '@/contexts/app.context'
 import { CalendarIcon, ClockIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Users } from 'lucide-react'
 import { toast } from 'sonner'
+import { CreateSessionButton } from '@/components/CreateSessionButton'
 
 export default function CommunityPage() {
   const router = useRouter()
@@ -203,7 +203,7 @@ export default function CommunityPage() {
         </div>
       )}
 
-      {!upcomingSession && community && <CreateSessionDialog communityId={community.id} />}
+      {!upcomingSession && community && <CreateSessionButton communityId={community.id} />}
     </Layout>
   )
 }

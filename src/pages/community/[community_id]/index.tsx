@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Users } from 'lucide-react' // Add this import
+import { toast } from 'sonner'
 
 export default function CommunityPage() {
   const router = useRouter()
@@ -76,9 +77,8 @@ export default function CommunityPage() {
       if (error) throw error
 
       // Refetch the session to update the registration status
-      if (community) {
-        await fetchUpcomingSession(community.id)
-      }
+      await fetchUpcomingSession(community.id)
+      toast.success('You have been registered for the session.')
     } catch (error) {
       console.error('Error registering for session:', error)
       // Handle error (e.g., show an error message to the user)

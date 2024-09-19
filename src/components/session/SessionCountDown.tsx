@@ -14,7 +14,6 @@ export const SessionCountDown: FC<{ countdownRemaining: number; countdownDuratio
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <div className="text-3xl font-bold mb-4 text-gray-800">Get Ready!</div>
       <div className="relative w-64 h-64">
         <svg className="w-full h-full" viewBox="0 0 100 100">
           <circle
@@ -39,7 +38,7 @@ export const SessionCountDown: FC<{ countdownRemaining: number; countdownDuratio
           />
         </svg>
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-          <div className="text-5xl font-bold text-gray-800">
+          <div className="text-5xl font-bold">
             {formatSecondsToMMSS(Math.ceil(countdownRemaining))}
           </div>
         </div>

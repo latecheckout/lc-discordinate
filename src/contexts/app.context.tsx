@@ -38,6 +38,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     timeLeft: '',
     isLessThanOneMinute: false,
   })
+  const [sessionConfig, setSessionConfig] = useState<Tables<'session_config'> | null>(null)
 
   const fetchUpcomingSession = useCallback(
     async (communityId: string) => {
@@ -55,7 +56,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           .select(
             `
             *,
-            user_to_session (user_id)
+            user_to_session (user_id),
+            config:session_config (*)
           `,
           )
           .eq('community_id', communityId)
@@ -70,6 +72,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const isUserRegistered = data.user_to_session.some(
             (registration) => registration.user_id === user.id,
           )
+          setSessionConfig(data.config)
           setUpcomingSession({ ...data, isUserRegistered })
         } else {
           setUpcomingSession(null)
@@ -83,21 +86,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   )
 
   useEffect(() => {
-    if (upcomingSession) {
+    if (upcomingSession && sessionConfig) {
       const timer = setInterval(() => {
-        const now = new Date()
-        const sessionStart = new Date(upcomingSession.scheduled_at)
-        const sessionEnd = addMinutes(sessionStart, 5)
-        const secondsToStart = differenceInSeconds(sessionStart, now)
-        const secondsToEnd = differenceInSeconds(sessionEnd, now)
+        const now = Date.now() / 1000
+        const sessionStart = new Date(upcomingSession.scheduled_at).getTime() / 1000
+        const buttonPhaseStart = sessionStart + sessionConfig.countdown_seconds
+        const buttonPhaseEnd = buttonPhaseStart + sessionConfig.button_press_seconds
 
-        if (secondsToStart > 0) {
-          const timeLeft = format(addSeconds(new Date(0), secondsToStart), 'mm:ss')
-          setCountdown({
-            timeLeft,
-            isLessThanOneMinute: secondsToStart < 60,
-          })
-        } else if (secondsToEnd > 0) {
+        if (now >= buttonPhaseEnd) {
+          setCountdown({ timeLeft: 'Ended', isLessThanOneMinute: false })
+          setUpcomingSession(null)
+          clearInterval(timer)
+        } else if (now >= sessionStart) {
           setCountdown({ timeLeft: 'Ongoing', isLessThanOneMinute: false })
 
           // Redirect to the session page if the user is registered
@@ -109,14 +109,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }, 3000)
           }
         } else {
-          setCountdown({ timeLeft: 'Ended', isLessThanOneMinute: false })
-          clearInterval(timer)
+          const timeLeft = format(addSeconds(new Date(0), sessionStart - now), 'mm:ss')
+          setCountdown({
+            timeLeft,
+            isLessThanOneMinute: sessionStart - now < 60,
+          })
         }
       }, 1000)
 
       return () => clearInterval(timer)
     }
-  }, [upcomingSession, router])
+  }, [upcomingSession, sessionConfig, router])
 
   useEffect(() => {
     const getCommunities = async (dToken: string) => {

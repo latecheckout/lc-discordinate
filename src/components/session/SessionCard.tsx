@@ -85,11 +85,22 @@ export const PastSessionCard: React.FC<{ session: SessionWithConfig }> = ({ sess
 
   return (
     <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
-      <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-primary-foreground">Session #{session.id}</h3>
-        <Badge variant="secondary" className="text-sm">
-          <Users className="h-4 w-4 mr-2" /> {session.userToSession.length}
-        </Badge>
+      <div className="bg-primary px-4 py-5 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <h3 className="text-xl font-semibold text-primary-foreground">Session</h3>
+            <Badge variant="outline" className="bg-primary/20 text-primary-foreground">
+              #{session.id.slice(-4)}
+            </Badge>
+          </div>
+          <Badge
+            variant="secondary"
+            className="flex items-center space-x-2 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <Users className="h-4 w-4" />
+            <span className="hover:text-primary-foreground/90">{session.userToSession.length}</span>
+          </Badge>
+        </div>
       </div>
       <div className="px-4 py-5 sm:p-6">
         <div className="grid grid-cols-2 gap-4 mb-4">

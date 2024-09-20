@@ -181,7 +181,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         clearInterval(pollingIntervalRef.current)
       }
       pollingIntervalRef.current = setInterval(() => {
-        console.log('masuk polling')
         fetchUpcomingAndOngoingSession(communityId)
         fetchPastSessions(communityId)
       }, 10000) // 10 seconds

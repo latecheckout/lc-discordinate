@@ -109,67 +109,84 @@ export default function CommunityPage() {
 
   return (
     <Layout>
-      <div className="bg-card shadow-xl rounded-lg overflow-hidden">
-        <div className="bg-primary px-4 py-5 sm:px-6 flex items-center">
-          {community.pfp ? (
-            <Image
-              src={`https://cdn.discordapp.com/icons/${community.guild_id}/${community.pfp}.png`}
-              alt={`${community.name} icon`}
-              width={64}
-              height={64}
-              className="w-16 h-16 rounded-full mr-4 border-2 border-primary/20"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full mr-4 bg-primary/10 flex items-center justify-center">
-              <span className="text-2xl font-semibold text-primary">
-                {community.name.charAt(0)}
-              </span>
+      <div className="space-y-8">
+        {/* Community Header */}
+        <div className="bg-card shadow-xl rounded-lg overflow-hidden">
+          <div className="bg-primary px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {community.pfp ? (
+                <Image
+                  src={`https://cdn.discordapp.com/icons/${community.guild_id}/${community.pfp}.png`}
+                  alt={`${community.name} icon`}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-full border-2 border-primary/20"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-2xl font-semibold text-primary">
+                    {community.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+              <h1 className="text-2xl font-bold text-primary-foreground">{community.name}</h1>
+            </div>
+            <p className="text-sm text-primary-foreground/80">
+              Members: {community.userCount ?? 'Loading...'}
+            </p>
+          </div>
+        </div>
+
+        {/* Session Grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Ongoing Session */}
+          {ongoingSession && (
+            <div className="md:col-span-2">
+              <SessionCard
+                session={ongoingSession}
+                type="ongoing"
+                onJoin={() =>
+                  router.push(`/community/${community.id}/session/${ongoingSession.id}`)
+                }
+              />
             </div>
           )}
-          <h1 className="text-2xl font-bold text-primary-foreground">{community.name}</h1>
+
+          {/* Upcoming Session */}
+          {upcomingSession && (
+            <div className="md:col-span-2">
+              <SessionCard
+                session={upcomingSession}
+                type="upcoming"
+                countdown={countdown}
+                onRegister={handleRegister}
+                isLoadingRegister={isLoadingRegister}
+              />
+            </div>
+          )}
+
+          {/* Create Session Button */}
+          {!upcomingSession && !ongoingSession && (
+            <div className="md:col-span-2">
+              <CreateSessionButton communityId={community.id} />
+            </div>
+          )}
         </div>
-        <div className="px-4 py-5 sm:p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Community Information</h2>
-          <p className="text-muted-foreground">
-            Number of joined users: {community.userCount ?? 'Loading...'}
-          </p>
-        </div>
+
+        {/* Past Sessions */}
+        {filteredPastSessions.length > 0 && (
+          <div className="bg-card shadow-xl rounded-lg overflow-hidden">
+            <div className="bg-primary px-6 py-4">
+              <h2 className="text-xl font-semibold text-primary-foreground">Past Sessions</h2>
+            </div>
+            <div className="p-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredPastSessions.map((session) => (
+                <PastSessionCard key={session.id} session={session} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
-      {ongoingSession && (
-        <SessionCard
-          session={ongoingSession}
-          type="ongoing"
-          onJoin={() => router.push(`/community/${community.id}/session/${ongoingSession.id}`)}
-        />
-      )}
-
-      {upcomingSession && (
-        <SessionCard
-          session={upcomingSession}
-          type="upcoming"
-          countdown={countdown}
-          onRegister={handleRegister}
-          isLoadingRegister={isLoadingRegister}
-        />
-      )}
-
-      {!upcomingSession && !ongoingSession && community && (
-        <CreateSessionButton communityId={community.id} />
-      )}
-
-      {filteredPastSessions.length > 0 && (
-        <div className="mt-6 bg-card shadow-xl rounded-lg overflow-hidden">
-          <div className="bg-primary px-4 py-5 sm:px-6">
-            <h2 className="text-xl font-semibold text-primary-foreground">Past Sessions</h2>
-          </div>
-          <div className="px-4 py-5 sm:p-6">
-            {filteredPastSessions.map((session) => (
-              <PastSessionCard key={session.id} session={session} />
-            ))}
-          </div>
-        </div>
-      )}
     </Layout>
   )
 }

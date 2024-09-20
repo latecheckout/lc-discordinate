@@ -29,7 +29,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background">
       <Header />
       <Toaster />
-      <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">{children}</main>
+      <main className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-4xl">{children}</main>
     </div>
   )
 }

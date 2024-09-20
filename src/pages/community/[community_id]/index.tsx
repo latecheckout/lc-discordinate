@@ -5,65 +5,73 @@ import Image from 'next/image'
 import { getCommunityWithUserCount } from '@/lib/supabase/communityOperations'
 import { Tables } from '@/lib/database.types'
 import { useApp } from '@/contexts/app.context'
-import { CalendarIcon, ClockIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth.context'
 import { supabase } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { CreateSessionButton } from '@/components/CreateSessionButton'
+import { PastSessionCard, SessionCard } from '@/components/session/SessionCard'
 
 export default function CommunityPage() {
   const router = useRouter()
   const { community_id } = router.query
-  const [userCount, setUserCount] = useState<number | null>(null)
-  const [community, setCommunity] = useState<Tables<'community'> | null>(null)
+  const {
+    upcomingSession,
+    ongoingSession,
+    countdown,
+    pastSessions,
+    startPolling,
+    stopPolling,
+    fetchUpcomingAndOngoingSession,
+    fetchPastSessions,
+  } = useApp()
+
+  const [community, setCommunity] = useState<(Tables<'community'> & { userCount: number }) | null>(
+    null,
+  )
   const [isLoadingRegister, setIsLoadingRegister] = useState(false)
-  const { upcomingSession, countdown, fetchUpcomingSession } = useApp()
+  const [isLoading, setIsLoading] = useState(true)
   const { user } = useAuth()
-  const [participantCount, setParticipantCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      if (community_id) {
+        setIsLoading(true)
+        try {
+          await Promise.all([
+            fetchUpcomingAndOngoingSession(community_id as string),
+            fetchPastSessions(community_id as string),
+          ])
+          startPolling(community_id as string)
+        } catch (error) {
+          console.error('Error fetching initial session data:', error)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    fetchInitialData()
+
+    return () => stopPolling()
+  }, [community_id, fetchUpcomingAndOngoingSession, fetchPastSessions, startPolling, stopPolling])
 
   useEffect(() => {
     const fetchCommunityDetails = async () => {
+      if (!community_id) return
       try {
         const { community, userCount } = await getCommunityWithUserCount(community_id as string)
-        setCommunity(community)
-        setUserCount(userCount)
-
         if (community) {
-          await fetchUpcomingSession(community.id)
+          setCommunity({ ...community, userCount })
+        } else {
+          console.error('Community not found')
         }
       } catch (error) {
         console.error('Failed to get community details', error)
       }
     }
 
-    if (community_id) {
-      fetchCommunityDetails()
-    }
-  }, [community_id, fetchUpcomingSession])
-
-  useEffect(() => {
-    const fetchParticipantCount = async () => {
-      if (upcomingSession) {
-        try {
-          const { count, error } = await supabase
-            .from('user_to_session')
-            .select('*', { count: 'exact', head: true })
-            .eq('session_id', upcomingSession.id)
-
-          if (error) throw error
-          setParticipantCount(count)
-        } catch (error) {
-          console.error('Error fetching participant count:', error)
-        }
-      }
-    }
-
-    fetchParticipantCount()
-  }, [upcomingSession])
+    fetchCommunityDetails()
+  }, [community_id])
 
   const handleRegister = async () => {
     if (!user || !upcomingSession || !community) return
@@ -76,18 +84,17 @@ export default function CommunityPage() {
 
       if (error) throw error
 
-      // Refetch the session to update the registration status
-      await fetchUpcomingSession(community.id)
+      await fetchUpcomingAndOngoingSession(community.id)
       toast.success('You have been registered for the session.')
     } catch (error) {
       console.error('Error registering for session:', error)
-      // Handle error (e.g., show an error message to the user)
+      toast.error('Failed to register for the session.')
     } finally {
       setIsLoadingRegister(false)
     }
   }
 
-  if (!community) {
+  if (isLoading || !community) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-full">
@@ -97,113 +104,89 @@ export default function CommunityPage() {
     )
   }
 
+  // Filter out the ongoing session from past sessions
+  const filteredPastSessions = pastSessions.filter((session) => session.id !== ongoingSession?.id)
+
   return (
     <Layout>
-      <div className="bg-card shadow-xl rounded-lg overflow-hidden">
-        <div className="bg-primary px-4 py-5 sm:px-6 flex items-center">
-          {community.pfp ? (
-            <Image
-              src={`https://cdn.discordapp.com/icons/${community.guild_id}/${community.pfp}.png`}
-              alt={`${community.name} icon`}
-              width={64}
-              height={64}
-              className="w-16 h-16 rounded-full mr-4 border-2 border-primary/20"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full mr-4 bg-primary/10 flex items-center justify-center">
-              <span className="text-2xl font-semibold text-primary">
-                {community.name.charAt(0)}
-              </span>
+      <div className="space-y-8">
+        {/* Community Header */}
+        <div className="bg-card shadow-xl rounded-lg overflow-hidden">
+          <div className="bg-primary px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {community.pfp ? (
+                <Image
+                  src={`https://cdn.discordapp.com/icons/${community.guild_id}/${community.pfp}.png`}
+                  alt={`${community.name} icon`}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-full border-2 border-primary/20"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-2xl font-semibold text-primary">
+                    {community.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+              <h1 className="text-2xl font-bold text-primary-foreground">{community.name}</h1>
+            </div>
+            <p className="text-sm text-primary-foreground/80">
+              Members: {community.userCount ?? 'Loading...'}
+            </p>
+          </div>
+        </div>
+
+        {/* Session Grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Ongoing Session */}
+          {ongoingSession && (
+            <div className="md:col-span-2">
+              <SessionCard
+                session={ongoingSession}
+                type="ongoing"
+                onJoin={() =>
+                  router.push(`/community/${community.id}/session/${ongoingSession.id}`)
+                }
+              />
             </div>
           )}
-          <h1 className="text-2xl font-bold text-primary-foreground">{community.name}</h1>
+
+          {/* Upcoming Session */}
+          {upcomingSession && (
+            <div className="md:col-span-2">
+              <SessionCard
+                session={upcomingSession}
+                type="upcoming"
+                countdown={countdown}
+                onRegister={handleRegister}
+                isLoadingRegister={isLoadingRegister}
+              />
+            </div>
+          )}
+
+          {/* Create Session Button */}
+          {!upcomingSession && !ongoingSession && (
+            <div className="md:col-span-2">
+              <CreateSessionButton communityId={community.id} />
+            </div>
+          )}
         </div>
-        <div className="px-4 py-5 sm:p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Community Information</h2>
-          <p className="text-muted-foreground">
-            Number of joined users: {userCount !== null ? userCount : 'Loading...'}
-          </p>
-          {/* Add more community information here as needed */}
-        </div>
+
+        {/* Past Sessions */}
+        {filteredPastSessions.length > 0 && (
+          <div className="bg-card shadow-xl rounded-lg overflow-hidden">
+            <div className="bg-primary px-6 py-4">
+              <h2 className="text-xl font-semibold text-primary-foreground">Past Sessions</h2>
+            </div>
+            <div className="p-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredPastSessions.map((session) => (
+                <PastSessionCard key={session.id} session={session} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
-      {upcomingSession && countdown.timeLeft && (
-        <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
-          <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-primary-foreground flex items-center">
-              <CalendarIcon className="mr-2 h-6 w-6" />
-              {countdown.timeLeft === 'Ongoing' ? 'Ongoing Session' : 'Upcoming Session'}
-            </h2>
-            {countdown.timeLeft ? (
-              <span
-                className={cn(
-                  'text-emerald-100 text-sm font-medium bg-emerald-600/80 px-3 py-1 rounded-full shadow-md w-28 text-center',
-                  countdown.isLessThanOneMinute && 'animate-pulse',
-                )}
-              >
-                {countdown.timeLeft}
-              </span>
-            ) : (
-              <span className="text-primary-foreground text-sm font-medium px-3 py-1 rounded-full flex items-center shadow-md w-28 justify-center">
-                <span className="mr-2">Loading</span>
-                <span className="flex space-x-1">
-                  <span
-                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: '0ms' }}
-                  ></span>
-                  <span
-                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: '150ms' }}
-                  ></span>
-                  <span
-                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: '300ms' }}
-                  ></span>
-                </span>
-              </span>
-            )}
-          </div>
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center text-foreground mb-2">
-              <ClockIcon className="mr-2 h-5 w-5 text-primary/70" />
-              <p className="font-medium">
-                {new Date(upcomingSession.scheduled_at).toLocaleString()}
-              </p>
-            </div>
-            <div className="flex items-center text-foreground mb-4">
-              <Badge className="text-sm flex items-center gap-1 px-3 py-1">
-                <Users className="h-4 w-4" />
-                {participantCount !== null
-                  ? `${participantCount} participant${participantCount !== 1 ? 's' : ''}`
-                  : 'Loading participants...'}
-              </Badge>
-            </div>
-            {!upcomingSession.isUserRegistered && countdown.timeLeft !== 'Ongoing' && (
-              <Button onClick={handleRegister} className="mt-4">
-                {isLoadingRegister ? 'Registering...' : 'Register for Session'}
-              </Button>
-            )}
-            {upcomingSession.isUserRegistered && (
-              <p className="mt-4 text-sm text-muted-foreground">
-                You are registered for this session.
-                {countdown.timeLeft === 'Ongoing' && (
-                  <Button
-                    onClick={() =>
-                      router.push(`/community/${community.id}/session/${upcomingSession.id}`)
-                    }
-                    className="ml-4"
-                  >
-                    Join Session
-                  </Button>
-                )}
-              </p>
-            )}
-            {/* Add more session details here if needed */}
-          </div>
-        </div>
-      )}
-
-      {!upcomingSession && community && <CreateSessionButton communityId={community.id} />}
     </Layout>
   )
 }

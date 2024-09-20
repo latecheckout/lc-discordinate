@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/auth.context'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { Toaster } from 'sonner'
+
 interface LayoutProps {
   children: React.ReactNode
 }
@@ -26,10 +27,12 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header className="sticky top-0 z-50 w-full" />
       <Toaster />
-      <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">{children}</main>
+      <main className="flex-grow container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mt-16">
+        {children}
+      </main>
     </div>
   )
 }

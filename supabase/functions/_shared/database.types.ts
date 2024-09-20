@@ -64,7 +64,6 @@ export type Database = {
       community: {
         Row: {
           created_at: string | null
-          created_by: string
           guild_id: string
           id: string
           name: string
@@ -72,7 +71,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          created_by: string
           guild_id: string
           id?: string
           name: string
@@ -80,18 +78,38 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          created_by?: string
           guild_id?: string
           id?: string
           name?: string
           pfp?: string | null
         }
+        Relationships: []
+      }
+      leaderboard: {
+        Row: {
+          all_time_high_score: number
+          community_id: string
+          rank: number
+          updated_at: string
+        }
+        Insert: {
+          all_time_high_score: number
+          community_id: string
+          rank: number
+          updated_at?: string
+        }
+        Update: {
+          all_time_high_score?: number
+          community_id?: string
+          rank?: number
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'community_created_by_fkey'
-            columns: ['created_by']
-            isOneToOne: false
-            referencedRelation: 'users'
+            foreignKeyName: 'leaderboard_community_id_fkey'
+            columns: ['community_id']
+            isOneToOne: true
+            referencedRelation: 'community'
             referencedColumns: ['id']
           },
         ]
@@ -262,6 +280,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_session_score: {
+        Args: {
+          p_session_id: string
+          p_timestamp: string
+        }
+        Returns: undefined
+      }
+      check_session_score: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_default_session_config_id: {
         Args: Record<PropertyKey, never>
         Returns: string

@@ -64,7 +64,6 @@ export type Database = {
       community: {
         Row: {
           created_at: string | null
-          created_by: string
           guild_id: string
           id: string
           name: string
@@ -72,7 +71,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          created_by: string
           guild_id: string
           id?: string
           name: string
@@ -80,41 +78,29 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          created_by?: string
           guild_id?: string
           id?: string
           name?: string
           pfp?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: 'community_created_by_fkey'
-            columns: ['created_by']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       leaderboard: {
         Row: {
           all_time_high_score: number
           community_id: string
-          id: string
           rank: number
           updated_at: string
         }
         Insert: {
           all_time_high_score: number
           community_id: string
-          id?: string
           rank: number
           updated_at?: string
         }
         Update: {
           all_time_high_score?: number
           community_id?: string
-          id?: string
           rank?: number
           updated_at?: string
         }

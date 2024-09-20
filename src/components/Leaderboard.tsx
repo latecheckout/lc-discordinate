@@ -22,7 +22,7 @@ export default function Leaderboard() {
           <ul className="space-y-4">
             {leaderboardData.map((entry, index) => (
               <li
-                key={entry.id}
+                key={entry.community_id}
                 className="flex items-center justify-between p-4 rounded-lg bg-background hover:bg-accent/50 transition duration-150 ease-in-out cursor-pointer"
                 onClick={() => handleCommunityClick(entry.community.id)}
               >

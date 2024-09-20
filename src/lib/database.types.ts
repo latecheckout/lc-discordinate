@@ -59,6 +59,13 @@ export type Database = {
             referencedRelation: 'session'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'button_press_session_id_fkey'
+            columns: ['session_id']
+            isOneToOne: false
+            referencedRelation: 'session_timestamps'
+            referencedColumns: ['session_id']
+          },
         ]
       }
       community: {
@@ -267,6 +274,13 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'user_to_session_session_id_fkey'
+            columns: ['session_id']
+            isOneToOne: false
+            referencedRelation: 'session_timestamps'
+            referencedColumns: ['session_id']
+          },
+          {
             foreignKeyName: 'user_to_session_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
@@ -277,7 +291,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      session_timestamps: {
+        Row: {
+          button_press_start: string | null
+          session_end: string | null
+          session_id: string | null
+          session_start: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_session_score: {

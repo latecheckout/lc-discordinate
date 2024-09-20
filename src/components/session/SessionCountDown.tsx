@@ -1,16 +1,21 @@
 import { formatSecondsToMMSS } from '@/lib/utils'
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect } from 'react'
+import { motion, useAnimation } from 'framer-motion'
 
 export const SessionCountDown: FC<{ countdownRemaining: number; countdownDuration: number }> = ({
   countdownRemaining,
   countdownDuration,
 }) => {
-  const [progress, setProgress] = useState(100)
   const circumference = 2 * Math.PI * 45
+  const controls = useAnimation()
 
   useEffect(() => {
-    setProgress((countdownRemaining / countdownDuration) * 100)
-  }, [countdownRemaining, countdownDuration])
+    const progress = (countdownRemaining / countdownDuration) * 100
+    controls.start({
+      strokeDashoffset: circumference * (1 - progress / 100),
+      transition: { duration: 1.1, ease: 'linear' },
+    })
+  }, [countdownRemaining, countdownDuration, controls, circumference])
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -24,7 +29,7 @@ export const SessionCountDown: FC<{ countdownRemaining: number; countdownDuratio
             r="45"
             fill="transparent"
           />
-          <circle
+          <motion.circle
             className="text-blue-600 stroke-current"
             strokeWidth="8"
             strokeLinecap="round"
@@ -33,15 +38,21 @@ export const SessionCountDown: FC<{ countdownRemaining: number; countdownDuratio
             r="45"
             fill="transparent"
             strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - progress / 100)}
+            initial={false}
+            animate={controls}
             transform="rotate(-90 50 50)"
           />
         </svg>
-        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+        <motion.div
+          className="absolute top-0 left-0 w-full h-full flex items-center justify-center"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="text-5xl font-bold">
             {formatSecondsToMMSS(Math.ceil(countdownRemaining))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

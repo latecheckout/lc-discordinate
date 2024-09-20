@@ -3,13 +3,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Tables } from '@/lib/database.types'
 import { fetchSessionAndConfig } from '@/lib/supabase/communityOperations'
-import { SessionButton } from '@/components/session/SessionButton'
 import { SessionCountDown } from '@/components/session/SessionCountDown'
 import Layout from '@/components/Layout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ClockIcon, CheckCircleIcon } from 'lucide-react'
 import { useApp } from '@/contexts/app.context'
+import { SessionProgressBar } from '@/components/session/SessionProgressBar'
 
 interface SessionConfig {
   countdown_seconds: number
@@ -154,25 +154,13 @@ export default function SessionPage() {
             />
           )}
           {SessionPhase === 'button-phase' && (
-            <>
-              <div className="w-full h-5 bg-gray-200 rounded-full mb-4 overflow-hidden">
-                <div
-                  className="h-full bg-red-500 transition-all duration-1000 ease-linear"
-                  style={{ width: `${buttonPhaseProgress}%` }}
-                ></div>
-              </div>
-              {currentScore !== null && (
-                <div className="mb-4">
-                  <p className="text-lg font-semibold">Current Score:</p>
-                  <p className="text-3xl font-bold text-primary">{currentScore}</p>
-                </div>
-              )}
-              <SessionButton
-                cooldown={sessionConfig?.button_press_timeout_seconds || 0}
-                onClick={handleButtonClick}
-                disabled={SessionPhase !== 'button-phase'}
-              />
-            </>
+            <SessionProgressBar
+              buttonPhaseProgress={buttonPhaseProgress}
+              currentScore={currentScore}
+              sessionConfig={sessionConfig}
+              onButtonClick={handleButtonClick}
+              sessionPhase={SessionPhase}
+            />
           )}
           {SessionPhase === 'ended' && (
             <div className="space-y-4">

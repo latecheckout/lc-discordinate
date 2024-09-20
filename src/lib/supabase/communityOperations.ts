@@ -4,13 +4,25 @@ import { supabase } from './client'
 export async function fetchCommunities(
   dToken: string,
   accessToken: string,
-): Promise<Tables<'community'>[]> {
+): Promise<
+  (Tables<'community'> & { leaderboard: { rank: number; all_time_high_score: number } | null })[]
+> {
   const { error } = await supabase.functions.invoke<Tables<'community'>[]>('discord', {
     headers: { Authorization: `Bearer ${accessToken}` },
     body: { discordProviderToken: dToken },
   })
   if (error) throw error
-  const { data } = await supabase.from('community').select('*')
+
+  const { data, error: fetchError } = await supabase.from('community').select(`
+      *,
+      leaderboard (rank, all_time_high_score)
+    `)
+
+  if (fetchError) {
+    throw new Error(`Failed to fetch communities with leaderboard: ${fetchError.message}`)
+  }
+
+  console.log(data)
   return data ?? []
 }
 

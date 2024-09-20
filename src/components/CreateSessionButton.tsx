@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useApp } from '@/contexts/app.context'
 
 export const CreateSessionButton: FC<{ communityId: string }> = ({ communityId }) => {
-  const { fetchUpcomingSession } = useApp()
+  const { fetchUpcomingAndOngoingSession } = useApp()
 
   const handleCreateSession = async () => {
     try {
@@ -17,7 +17,7 @@ export const CreateSessionButton: FC<{ communityId: string }> = ({ communityId }
       if (error) throw error
 
       toast.success('Joined the queue successfully!')
-      fetchUpcomingSession(communityId)
+      fetchUpcomingAndOngoingSession(communityId)
     } catch (error) {
       console.error('Error creating session:', error)
       toast.error('Failed to create session. Please try again.')

@@ -21,7 +21,7 @@ type SessionPhase = 'countdown' | 'pre-button' | 'button-phase' | 'ended'
 
 export default function SessionPage() {
   const router = useRouter()
-  const { fetchUpcomingSession } = useApp()
+  const { fetchUpcomingAndOngoingSession } = useApp()
   const { sessionId } = router.query
   const [session, setSession] = useState<Tables<'session'> | null>(null)
   const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
@@ -63,7 +63,7 @@ export default function SessionPage() {
 
         // Refetch session data when the session ends
         fetchSessionData()
-        fetchUpcomingSession(session.community_id)
+        fetchUpcomingAndOngoingSession(session.community_id)
       } else if (now >= buttonPhaseStart) {
         setSessionPhase('button-phase')
         setCountdown(buttonPhaseEnd - now)
@@ -82,7 +82,7 @@ export default function SessionPage() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [session, sessionConfig, fetchSessionData, fetchUpcomingSession])
+  }, [session, sessionConfig, fetchSessionData, fetchUpcomingAndOngoingSession])
 
   useEffect(() => {
     if (!session) return

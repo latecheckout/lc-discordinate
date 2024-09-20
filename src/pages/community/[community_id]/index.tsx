@@ -4,66 +4,77 @@ import Layout from '@/components/Layout'
 import Image from 'next/image'
 import { getCommunityWithUserCount } from '@/lib/supabase/communityOperations'
 import { Tables } from '@/lib/database.types'
-import { useApp } from '@/contexts/app.context'
-import { CalendarIcon, ClockIcon } from 'lucide-react'
+import { SessionWithConfig, useApp } from '@/contexts/app.context'
+import { CalendarIcon, ClockIcon, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth.context'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { CreateSessionButton } from '@/components/CreateSessionButton'
 
 export default function CommunityPage() {
   const router = useRouter()
   const { community_id } = router.query
-  const [userCount, setUserCount] = useState<number | null>(null)
-  const [community, setCommunity] = useState<Tables<'community'> | null>(null)
+  const {
+    upcomingSession,
+    ongoingSession,
+    countdown,
+    pastSessions,
+    startPolling,
+    stopPolling,
+    fetchUpcomingAndOngoingSession,
+    fetchPastSessions,
+  } = useApp()
+
+  const [community, setCommunity] = useState<(Tables<'community'> & { userCount: number }) | null>(
+    null,
+  )
   const [isLoadingRegister, setIsLoadingRegister] = useState(false)
-  const { upcomingSession, countdown, fetchUpcomingSession } = useApp()
+  const [isLoading, setIsLoading] = useState(true)
   const { user } = useAuth()
-  const [participantCount, setParticipantCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      if (community_id) {
+        setIsLoading(true)
+        try {
+          await Promise.all([
+            fetchUpcomingAndOngoingSession(community_id as string),
+            fetchPastSessions(community_id as string),
+          ])
+          startPolling(community_id as string)
+        } catch (error) {
+          console.error('Error fetching initial session data:', error)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    fetchInitialData()
+
+    return () => stopPolling()
+  }, [community_id, fetchUpcomingAndOngoingSession, fetchPastSessions, startPolling, stopPolling])
 
   useEffect(() => {
     const fetchCommunityDetails = async () => {
+      if (!community_id) return
       try {
         const { community, userCount } = await getCommunityWithUserCount(community_id as string)
-        setCommunity(community)
-        setUserCount(userCount)
-
         if (community) {
-          await fetchUpcomingSession(community.id)
+          setCommunity({ ...community, userCount })
+        } else {
+          console.error('Community not found')
         }
       } catch (error) {
         console.error('Failed to get community details', error)
       }
     }
 
-    if (community_id) {
-      fetchCommunityDetails()
-    }
-  }, [community_id, fetchUpcomingSession])
-
-  useEffect(() => {
-    const fetchParticipantCount = async () => {
-      if (upcomingSession) {
-        try {
-          const { count, error } = await supabase
-            .from('user_to_session')
-            .select('*', { count: 'exact', head: true })
-            .eq('session_id', upcomingSession.id)
-
-          if (error) throw error
-          setParticipantCount(count)
-        } catch (error) {
-          console.error('Error fetching participant count:', error)
-        }
-      }
-    }
-
-    fetchParticipantCount()
-  }, [upcomingSession])
+    fetchCommunityDetails()
+  }, [community_id])
 
   const handleRegister = async () => {
     if (!user || !upcomingSession || !community) return
@@ -76,18 +87,17 @@ export default function CommunityPage() {
 
       if (error) throw error
 
-      // Refetch the session to update the registration status
-      await fetchUpcomingSession(community.id)
+      await fetchUpcomingAndOngoingSession(community.id)
       toast.success('You have been registered for the session.')
     } catch (error) {
       console.error('Error registering for session:', error)
-      // Handle error (e.g., show an error message to the user)
+      toast.error('Failed to register for the session.')
     } finally {
       setIsLoadingRegister(false)
     }
   }
 
-  if (!community) {
+  if (isLoading || !community) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-full">
@@ -96,6 +106,9 @@ export default function CommunityPage() {
       </Layout>
     )
   }
+
+  // Filter out the ongoing session from past sessions
+  const filteredPastSessions = pastSessions.filter((session) => session.id !== ongoingSession?.id)
 
   return (
     <Layout>
@@ -121,89 +134,157 @@ export default function CommunityPage() {
         <div className="px-4 py-5 sm:p-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">Community Information</h2>
           <p className="text-muted-foreground">
-            Number of joined users: {userCount !== null ? userCount : 'Loading...'}
+            Number of joined users: {community.userCount ?? 'Loading...'}
           </p>
-          {/* Add more community information here as needed */}
         </div>
       </div>
 
-      {upcomingSession && countdown.timeLeft && (
-        <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
-          <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-primary-foreground flex items-center">
-              <CalendarIcon className="mr-2 h-6 w-6" />
-              {countdown.timeLeft === 'Ongoing' ? 'Ongoing Session' : 'Upcoming Session'}
-            </h2>
-            {countdown.timeLeft ? (
-              <span
-                className={cn(
-                  'text-emerald-100 text-sm font-medium bg-emerald-600/80 px-3 py-1 rounded-full shadow-md w-28 text-center',
-                  countdown.isLessThanOneMinute && 'animate-pulse',
-                )}
-              >
-                {countdown.timeLeft}
-              </span>
-            ) : (
-              <span className="text-primary-foreground text-sm font-medium px-3 py-1 rounded-full flex items-center shadow-md w-28 justify-center">
-                <span className="mr-2">Loading</span>
-                <span className="flex space-x-1">
-                  <span
-                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: '0ms' }}
-                  ></span>
-                  <span
-                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: '150ms' }}
-                  ></span>
-                  <span
-                    className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: '300ms' }}
-                  ></span>
-                </span>
-              </span>
-            )}
+      {ongoingSession && (
+        <SessionCard
+          session={ongoingSession}
+          type="ongoing"
+          community={community}
+          onJoin={() => router.push(`/community/${community.id}/session/${ongoingSession.id}`)}
+        />
+      )}
+
+      {upcomingSession && (
+        <SessionCard
+          session={upcomingSession}
+          type="upcoming"
+          community={community}
+          countdown={countdown}
+          onRegister={handleRegister}
+          isLoadingRegister={isLoadingRegister}
+        />
+      )}
+
+      {!upcomingSession && !ongoingSession && community && (
+        <CreateSessionButton communityId={community.id} />
+      )}
+
+      {filteredPastSessions.length > 0 && (
+        <div className="mt-6 bg-card shadow-xl rounded-lg overflow-hidden">
+          <div className="bg-primary px-4 py-5 sm:px-6">
+            <h2 className="text-xl font-semibold text-primary-foreground">Past Sessions</h2>
           </div>
           <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center text-foreground mb-2">
-              <ClockIcon className="mr-2 h-5 w-5 text-primary/70" />
-              <p className="font-medium">
-                {new Date(upcomingSession.scheduled_at).toLocaleString()}
-              </p>
-            </div>
-            <div className="flex items-center text-foreground mb-4">
-              <Badge className="text-sm flex items-center gap-1 px-3 py-1">
-                <Users className="h-4 w-4" />
-                {participantCount !== null
-                  ? `${participantCount} participant${participantCount !== 1 ? 's' : ''}`
-                  : 'Loading participants...'}
-              </Badge>
-            </div>
-            {!upcomingSession.isUserRegistered && countdown.timeLeft !== 'Ongoing' && (
-              <Button onClick={handleRegister} className="mt-4">
-                {isLoadingRegister ? 'Registering...' : 'Register for Session'}
-              </Button>
-            )}
-            {upcomingSession.isUserRegistered && (
-              <p className="mt-4 text-sm text-muted-foreground">
-                You are registered for this session.
-                {countdown.timeLeft === 'Ongoing' && (
-                  <Button
-                    onClick={() =>
-                      router.push(`/community/${community.id}/session/${upcomingSession.id}`)
-                    }
-                    className="ml-4"
-                  >
-                    Join Session
-                  </Button>
-                )}
-              </p>
-            )}
-            {/* Add more session details here if needed */}
+            {filteredPastSessions.map((session) => (
+              <PastSessionCard key={session.id} session={session} />
+            ))}
           </div>
         </div>
       )}
-
-      {!upcomingSession && community && <CreateSessionButton communityId={community.id} />}
     </Layout>
+  )
+}
+
+type SessionCardProps = {
+  session: SessionWithConfig
+  type: 'ongoing' | 'upcoming'
+  community: Tables<'community'>
+  countdown?: { timeLeft: string; isLessThanOneMinute: boolean }
+  onRegister?: () => void
+  onJoin?: () => void
+  isLoadingRegister?: boolean
+}
+
+const SessionCard: React.FC<SessionCardProps> = ({
+  session,
+  type,
+  community,
+  countdown,
+  onRegister,
+  onJoin,
+  isLoadingRegister,
+}) => {
+  return (
+    <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
+      <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-primary-foreground flex items-center">
+          <CalendarIcon className="mr-2 h-6 w-6" />
+          {type === 'ongoing' ? 'Ongoing Session' : 'Upcoming Session'}
+        </h2>
+        {type === 'upcoming' && countdown?.timeLeft && (
+          <span
+            className={cn(
+              'text-emerald-100 text-sm font-medium bg-emerald-600/80 px-3 py-1 rounded-full shadow-md w-28 text-center',
+              countdown.isLessThanOneMinute && 'animate-pulse',
+            )}
+          >
+            {countdown.timeLeft}
+          </span>
+        )}
+        {type === 'ongoing' && (
+          <span className="text-emerald-100 text-sm font-medium bg-emerald-600/80 px-3 py-1 rounded-full shadow-md w-28 text-center">
+            Ongoing
+          </span>
+        )}
+      </div>
+      <div className="px-4 py-5 sm:p-6">
+        <div className="flex items-center text-foreground mb-2">
+          <ClockIcon className="mr-2 h-5 w-5 text-primary/70" />
+          <p className="font-medium">{new Date(session.scheduled_at).toLocaleString()}</p>
+        </div>
+        <div className="flex items-center text-foreground mb-4">
+          <Badge className="text-sm flex items-center gap-1 px-3 py-1">
+            <Users className="h-4 w-4" />
+            {session.userToSession.length} participant{session.userToSession.length !== 1 && 's'}
+          </Badge>
+        </div>
+        {type === 'upcoming' && !session.isUserRegistered && onRegister && (
+          <Button onClick={onRegister} className="mt-4">
+            {isLoadingRegister ? 'Registering...' : 'Register for Session'}
+          </Button>
+        )}
+        {type === 'upcoming' && session.isUserRegistered && (
+          <p className="mt-4 text-sm text-muted-foreground">You are registered for this session.</p>
+        )}
+        {type === 'ongoing' && onJoin && (
+          <Button onClick={onJoin} className="mt-4">
+            Join Session
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const PastSessionCard: React.FC<{ session: SessionWithConfig }> = ({ session }) => {
+  const startTime = new Date(session.scheduled_at)
+  const endTime = session.config
+    ? new Date(
+        startTime.getTime() +
+          (session.config.countdown_seconds + session.config.button_press_seconds) * 1000,
+      )
+    : startTime
+
+  return (
+    <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
+      <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
+        <h3 className="text-xl font-semibold text-primary-foreground">Session #{session.id}</h3>
+        <Badge variant="secondary" className="text-sm">
+          <Users className="h-4 w-4 mr-2" /> {session.userToSession.length}
+        </Badge>
+      </div>
+      <div className="px-4 py-5 sm:p-6">
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Started</p>
+            <p className="font-medium">{startTime.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Ended</p>
+            <p className="font-medium">{endTime.toLocaleString()}</p>
+          </div>
+        </div>
+        <div className="pt-4 border-t border-primary/10">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">Final Score</p>
+            <p className="text-2xl font-bold text-primary">{session.final_score}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

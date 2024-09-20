@@ -41,6 +41,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 // Create a provider component
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const router = useRouter()
+  const { community_id } = router.query
   const { session, user } = useAuth()
   const [communities, setCommunities] = useState<Tables<'community'>[] | null>(null)
   const [upcomingSession, setUpcomingSession] = useState<SessionWithConfig | null>(null)
@@ -220,7 +221,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setCountdown({ timeLeft: 'Ongoing', isLessThanOneMinute: false })
 
           // Redirect to the session page if the user is registered
-          if (upcomingSession.isUserRegistered) {
+          if (upcomingSession.isUserRegistered && community_id) {
             setTimeout(() => {
               router.push(
                 `/community/${upcomingSession.community_id}/session/${upcomingSession.id}`,
@@ -241,7 +242,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       return () => clearInterval(timer)
     }
-  }, [upcomingSession, router])
+  }, [upcomingSession, router, community_id])
 
   useEffect(() => {
     const getCommunities = async (dToken: string) => {

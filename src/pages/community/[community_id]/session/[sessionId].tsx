@@ -7,9 +7,11 @@ import { SessionCountDown } from '@/components/session/SessionCountDown'
 import Layout from '@/components/Layout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ClockIcon, CheckCircleIcon } from 'lucide-react'
+import { ClockIcon } from 'lucide-react'
 import { useApp } from '@/contexts/app.context'
 import { SessionProgressBar } from '@/components/session/SessionProgressBar'
+import { motion } from 'framer-motion'
+import { AnimatedCheckmark } from '@/components/AnimatedCheckmark'
 
 interface SessionConfig {
   countdown_seconds: number
@@ -143,7 +145,15 @@ export default function SessionPage() {
           <CardTitle className="text-2xl font-bold text-center">
             {SessionPhase === 'pre-button' && 'Get Ready!'}
             {SessionPhase === 'button-phase' && 'Press the Button!'}
-            {SessionPhase === 'ended' && 'Thank You for Playing!'}
+            {SessionPhase === 'ended' && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                Session Complete!
+              </motion.div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center">
@@ -163,38 +173,65 @@ export default function SessionPage() {
             />
           )}
           {SessionPhase === 'ended' && (
-            <div className="space-y-4">
-              <CheckCircleIcon className="w-16 h-16 mx-auto mb-4 text-green-500" />
+            <motion.div
+              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.3 }}
+                className="flex justify-center"
+              >
+                <AnimatedCheckmark />
+              </motion.div>
               {session?.final_score !== null ? (
-                <div className="space-y-2">
+                <motion.div
+                  className="space-y-3"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                >
                   <p className="text-xl text-muted-foreground">Your final score is</p>
-                  <div className="text-5xl font-extrabold text-green-600">
+                  <motion.div
+                    className="text-6xl font-extrabold text-green-600"
+                    initial={{ scale: 0.5 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 10, delay: 0.7 }}
+                  >
                     {session?.final_score}
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
               ) : (
                 <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 bg-primary rounded-full animate-bounce"></div>
-                  <div
-                    className="w-4 h-4 bg-primary rounded-full animate-bounce"
-                    style={{ animationDelay: '0.1s' }}
-                  ></div>
-                  <div
-                    className="w-4 h-4 bg-primary rounded-full animate-bounce"
-                    style={{ animationDelay: '0.2s' }}
-                  ></div>
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="w-4 h-4 bg-primary rounded-full"
+                      animate={{ y: ['0%', '-50%', '0%'] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
+                    />
+                  ))}
                   <span className="text-lg text-muted-foreground ml-2">
                     Calculating final score...
                   </span>
                 </div>
               )}
-              <Button
-                onClick={() => router.push(`/community/${session?.community_id}`)}
-                className="mt-4"
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
               >
-                Back to Community
-              </Button>
-            </div>
+                <Button
+                  onClick={() => router.push(`/community/${session?.community_id}`)}
+                  className="mt-4 px-6 py-3 text-lg"
+                >
+                  Back to Community
+                </Button>
+              </motion.div>
+            </motion.div>
           )}
         </CardContent>
       </Card>

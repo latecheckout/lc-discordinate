@@ -22,7 +22,6 @@ export async function fetchCommunities(
     throw new Error(`Failed to fetch communities with leaderboard: ${fetchError.message}`)
   }
 
-  console.log(data)
   return data ?? []
 }
 

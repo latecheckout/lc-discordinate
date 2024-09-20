@@ -46,7 +46,6 @@ Deno.serve(async (req) => {
       guild_id: guild.id,
       name: guild.name,
       pfp: guild.icon,
-      created_by: user.id,
     }))
 
     const { data: communities, error } = await supabaseAdmin

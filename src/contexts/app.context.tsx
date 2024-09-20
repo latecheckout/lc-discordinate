@@ -20,8 +20,15 @@ export type SessionWithConfig = Tables<'session'> & {
   isUserRegistered: boolean
 }
 
+export type CommunityWithLeaderboard = Tables<'community'> & {
+  leaderboard: { rank: number; all_time_high_score: number } | null
+}
+
+export type LeaderboardData = Tables<'leaderboard'> & { community: Tables<'community'> }
+
 interface AppContextType {
-  communities: Tables<'community'>[]
+  communities: CommunityWithLeaderboard[]
+  leaderboardData: LeaderboardData[]
   upcomingSession: SessionWithConfig | null
   ongoingSession: SessionWithConfig | null
   countdown: {
@@ -43,7 +50,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const router = useRouter()
   const { community_id } = router.query
   const { session, user } = useAuth()
-  const [communities, setCommunities] = useState<Tables<'community'>[] | null>(null)
+  const [communities, setCommunities] = useState<CommunityWithLeaderboard[] | null>(null)
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardData[]>([])
   const [upcomingSession, setUpcomingSession] = useState<SessionWithConfig | null>(null)
   const [ongoingSession, setOngoingSession] = useState<SessionWithConfig | null>(null)
   const [countdown, setCountdown] = useState<{ timeLeft: string; isLessThanOneMinute: boolean }>({
@@ -268,8 +276,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [user, session, communities])
 
+  useEffect(() => {
+    async function fetchLeaderboardData() {
+      const { data, error } = await supabase
+        .from('leaderboard')
+        .select(
+          `
+          *,
+          community (*)
+        `,
+        )
+        .order('rank', { ascending: true })
+        .limit(10)
+
+      if (error) {
+        console.error('Error fetching leaderboard data:', error)
+      } else {
+        setLeaderboardData(data as LeaderboardData[])
+      }
+    }
+
+    fetchLeaderboardData()
+  }, [])
+
   const value = {
     communities: communities ?? [],
+    leaderboardData,
     upcomingSession,
     ongoingSession,
     countdown,

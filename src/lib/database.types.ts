@@ -96,6 +96,38 @@ export type Database = {
           },
         ]
       }
+      leaderboard: {
+        Row: {
+          all_time_high_score: number
+          community_id: string
+          id: string
+          rank: number
+          updated_at: string
+        }
+        Insert: {
+          all_time_high_score: number
+          community_id: string
+          id?: string
+          rank: number
+          updated_at?: string
+        }
+        Update: {
+          all_time_high_score?: number
+          community_id?: string
+          id?: string
+          rank?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'leaderboard_community_id_fkey'
+            columns: ['community_id']
+            isOneToOne: true
+            referencedRelation: 'community'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       session: {
         Row: {
           community_id: string
@@ -262,6 +294,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_session_score: {
+        Args: {
+          p_session_id: string
+          p_timestamp: string
+        }
+        Returns: undefined
+      }
+      check_session_score: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_default_session_config_id: {
         Args: Record<PropertyKey, never>
         Returns: string

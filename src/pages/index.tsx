@@ -17,10 +17,9 @@ export default function Home() {
     <Layout>
       <div className="bg-card shadow-xl rounded-lg overflow-hidden">
         <div className="bg-primary px-4 py-5 sm:px-6">
-          <h1 className="text-2xl font-bold text-primary-foreground">Welcome, {user?.email}</h1>
+          <h1 className="text-2xl font-bold text-primary-foreground">Your Communities</h1>
         </div>
         <div className="px-4 py-5 sm:p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Your Communities</h2>
           {communities && communities.length > 0 ? (
             <ul className="divide-y divide-border">
               {communities.map((community, index) => (

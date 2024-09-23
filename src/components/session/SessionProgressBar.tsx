@@ -53,7 +53,7 @@ export const SessionProgressBar: React.FC<SessionProgressBarProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <p className="text-lg font-semibold">Current Score:</p>
+          <p className="text-lg font-semibold">Community Score</p>
           <p className="text-3xl font-bold text-primary">{currentScore}</p>
         </motion.div>
       )}

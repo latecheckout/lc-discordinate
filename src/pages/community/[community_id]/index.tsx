@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/auth.context'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { CreateSessionButton } from '@/components/CreateSessionButton'
-import { PastSessionCard, SessionCard } from '@/components/session/SessionCard'
+import { PastSessionItem, SessionCard } from '@/components/session/SessionCard'
 
 export default function CommunityPage() {
   const router = useRouter()
@@ -179,9 +179,9 @@ export default function CommunityPage() {
             <div className="bg-primary px-6 py-4">
               <h2 className="text-xl font-semibold text-primary-foreground">Past Sessions</h2>
             </div>
-            <div className="p-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="p-6">
               {filteredPastSessions.map((session) => (
-                <PastSessionCard key={session.id} session={session} />
+                <PastSessionItem key={session.id} session={session} />
               ))}
             </div>
           </div>

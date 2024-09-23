@@ -5,7 +5,9 @@ export async function fetchCommunities(
   dToken: string,
   accessToken: string,
 ): Promise<
-  (Tables<'community'> & { leaderboard: { rank: number; all_time_high_score: number } | null })[]
+  (Tables<'community'> & {
+    leaderboard: { rank: number; all_time_high_score: number } | null
+  })[]
 > {
   const { error } = await supabase.functions.invoke<Tables<'community'>[]>('discord', {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -13,10 +15,24 @@ export async function fetchCommunities(
   })
   if (error) throw error
 
-  const { data, error: fetchError } = await supabase.from('community').select(`
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('No user found')
+  }
+
+  const { data, error: fetchError } = await supabase
+    .from('community')
+    .select(
+      `
       *,
-      leaderboard (rank, all_time_high_score)
-    `)
+      leaderboard (rank, all_time_high_score),
+      user_to_community!inner(*)
+    `,
+    )
+    .eq('user_to_community.user_id', user.id)
 
   if (fetchError) {
     throw new Error(`Failed to fetch communities with leaderboard: ${fetchError.message}`)

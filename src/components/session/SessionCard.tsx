@@ -90,51 +90,26 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   )
 }
 
-export const PastSessionCard: React.FC<{ session: SessionWithConfig }> = ({ session }) => {
-  const startTime = new Date(session.scheduled_at)
-  const endTime = session.config
-    ? new Date(
-        startTime.getTime() +
-          (session.config.countdown_seconds + session.config.button_press_seconds) * 1000,
-      )
-    : startTime
+export const PastSessionItem: React.FC<{ session: SessionWithConfig }> = ({ session }) => {
+  const scheduledDate = new Date(session.scheduled_at).toLocaleDateString()
 
   return (
-    <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
-      <div className="bg-primary px-4 py-5 sm:px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <h3 className="text-xl font-semibold text-primary-foreground">Session</h3>
-            <Badge variant="outline" className="bg-primary/20 text-primary-foreground">
-              #{session.id.slice(-4)}
-            </Badge>
-          </div>
-          <Badge
-            variant="secondary"
-            className="flex items-center space-x-2 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <Users className="h-4 w-4" />
-            <span className="hover:text-primary-foreground/90">{session.userToSession.length}</span>
-          </Badge>
+    <div className="flex items-center justify-between py-4 border-b border-primary/10 last:border-b-0">
+      <div className="flex items-center space-x-4">
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-primary">{scheduledDate}</span>
         </div>
+        <Badge
+          variant="secondary"
+          className="flex items-center space-x-1 bg-primary/10 text-primary hover:bg-primary/20"
+        >
+          <Users className="h-3 w-3" />
+          <span>{session.userToSession.length}</span>
+        </Badge>
       </div>
-      <div className="px-4 py-5 sm:p-6">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Started</p>
-            <p className="font-medium">{startTime.toLocaleString()}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Ended</p>
-            <p className="font-medium">{endTime.toLocaleString()}</p>
-          </div>
-        </div>
-        <div className="pt-4 border-t border-primary/10">
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-muted-foreground">Final Score</p>
-            <p className="text-2xl font-bold text-primary">{session.final_score}</p>
-          </div>
-        </div>
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-muted-foreground">Final Score:</span>
+        <span className="text-lg font-bold text-primary">{session.final_score}</span>
       </div>
     </div>
   )

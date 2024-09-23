@@ -1,9 +1,11 @@
 import { SessionWithConfig } from '@/contexts/app.context'
 import { Tables } from '@/lib/database.types'
-import { CalendarIcon, ClockIcon, Users } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { CalendarIcon, ClockIcon, Share2, Users } from 'lucide-react'
+import { cn, getURL } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 type SessionCardProps = {
   session: SessionWithConfig
@@ -22,6 +24,17 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   onJoin,
   isLoadingRegister,
 }) => {
+  const handleCopyLink = async () => {
+    const shareUrl = `${getURL()}community/${session.community_id}`
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('Session link copied to clipboard!')
+    } catch (error) {
+      console.error('Error copying link:', error)
+      toast.error('Failed to copy link. Please try again.')
+    }
+  }
+
   return (
     <div className="mt-6 bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl rounded-lg overflow-hidden border border-primary/20">
       <div className="bg-primary px-4 py-5 sm:px-6 flex items-center justify-between">
@@ -56,18 +69,21 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             {session.userToSession.length} participant{session.userToSession.length !== 1 && 's'}
           </Badge>
         </div>
-        {type === 'upcoming' && !session.isUserRegistered && onRegister && (
-          <Button onClick={onRegister} className="mt-4">
-            {isLoadingRegister ? 'Registering...' : 'Register for Session'}
+
+        <div className="flex items-center space-x-2 mt-4">
+          {type === 'upcoming' && !session.isUserRegistered && onRegister && (
+            <Button onClick={onRegister} disabled={isLoadingRegister}>
+              {isLoadingRegister ? 'Registering...' : 'Register for Session'}
+            </Button>
+          )}
+          {type === 'ongoing' && onJoin && <Button onClick={onJoin}>Join Session</Button>}
+          <Button onClick={handleCopyLink} variant="outline">
+            <Share2 className="mr-2 h-4 w-4" />
+            Invite others to join!
           </Button>
-        )}
+        </div>
         {type === 'upcoming' && session.isUserRegistered && (
           <p className="mt-4 text-sm text-muted-foreground">You are registered for this session.</p>
-        )}
-        {type === 'ongoing' && onJoin && (
-          <Button onClick={onJoin} className="mt-4">
-            Join Session
-          </Button>
         )}
       </div>
     </div>
